@@ -1,5 +1,6 @@
 Binaries
 DerivedDataCache
+enc_temp_folder
 Intermediate
 Saved
 .vscode
@@ -12,3 +13,4 @@ Saved
 *.suo
 *.xcodeproj
 *.xcworkspace
+TDGame/

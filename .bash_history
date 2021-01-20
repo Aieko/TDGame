@@ -9,3 +9,6 @@ git commit -m "Second commit"
 git push -u origin main
 ls
 git lfs install
+git config --global user.name "Aieko"
+git config --global user.email "Aieko666@hotmail.com"
+git fetch
