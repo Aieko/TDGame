@@ -3,6 +3,9 @@ DerivedDataCache
 enc_temp_folder
 Intermediate
 Saved
+.bash_history
+.gitconfig
+.gitignore
 .vscode
 .vs
 *.VC.db
