@@ -13,16 +13,5 @@
 				"Paper2D"
 			]
 		}
-	],
-	"Plugins": [
-		{
-			"Name": "MegascansPlugin",
-			"Enabled": true,
-			"SupportedTargetPlatforms": [
-				"Win64",
-				"Mac",
-				"Linux"
-			]
-		}
 	]
 }
