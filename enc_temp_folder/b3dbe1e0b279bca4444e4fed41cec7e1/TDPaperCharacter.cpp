@@ -108,7 +108,7 @@ ATDPaperCharacter::ATDPaperCharacter(const FObjectInitializer& PCIP)
 
 	AttackTime = 0.5f;
 
-	AttackCD = 0.3f;
+	AttackCD = 2.0f;
 
 	PawnNoiseEmitterComp = CreateDefaultSubobject<UPawnNoiseEmitterComponent>(TEXT("PawnNoiseEmitterComp"));
 }
