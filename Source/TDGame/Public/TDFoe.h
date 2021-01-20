@@ -102,11 +102,16 @@ protected:
 
 	FTimerHandle TimerHandle_RefreshPath;
 
+	FTimerHandle TimerHandle_ResetCatch;
+
+	void ResetCatch();
+
 	UPROPERTY(EditDefaultsOnly, Category = "Foe")
 		float RequiredDistanceToTarget;
 	UPROPERTY(EditDefaultsOnly, Category = "Foe")
 		float DistanceToBreakChasing;
 
+	
 	
 	//						******PAWN SENSING******
 

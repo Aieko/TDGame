@@ -20,6 +20,8 @@
 #include "UObject/ConstructorHelpers.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Materials/MaterialInstanceDynamic.h"
+#include "TDGame/Public/TDPaperCharacter.h"
+#include "Kismet/GameplayStatics.h"
 
 static int32 DebugTDFoePathDrawing = 0;
 FAutoConsoleVariableRef CVARDebugTrackerBotDrawing(
@@ -413,6 +415,11 @@ void ATDFoe::SetFoeState(EFoeState NewState)
 	}
 }
 
+void ATDFoe::ResetCatch()
+{
+	EnableInput(UGameplayStatics::GetPlayerController(GetWorld(), 0));
+}
+
 //Cheking is where a player around
 void ATDFoe::OnNoiseHeard(APawn * NoiseInstigator, const FVector & Location, float Volume)
 {
@@ -454,11 +461,18 @@ void ATDFoe::NotifyActorBeginOverlap(AActor * OtherActor)
 	Super::NotifyActorBeginOverlap(OtherActor);
 
 	ATDBase* EnemyBase = Cast<ATDBase>(OtherActor);
+
+	ATDPaperCharacter* Player = Cast<ATDPaperCharacter>(OtherActor);
 	if (OtherActor == EnemyBase)
 	{
 		this->Destroy();
 		UGameplayStatics::ApplyDamage(OtherActor, 1.0f, GetController(), this, nullptr);
 		
+	}
+	if (OtherActor == Player)
+	{
+		DisableInput(UGameplayStatics::GetPlayerController(GetWorld(), 0));
+		GetWorldTimerManager().SetTimer(TimerHandle_ResetCatch, this, &ATDFoe::ResetCatch, 0.1f, false);
 	}
 }
 
