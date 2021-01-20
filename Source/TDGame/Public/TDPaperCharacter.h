@@ -9,7 +9,8 @@ enum class ECharacterState
 	Default,
 	Interact,
 	AttackCombo1,
-	AttackCombo2
+	AttackCombo2,
+	Dashing
 };
 class UPaperFlipbookComponent;
 class UPaperFlipbook;
@@ -43,6 +44,9 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = "Animations")
 		UPaperFlipbook* CharacterAttackAnimation2;
+
+	UPROPERTY(EditAnywhere, Category = "Animations")
+		UPaperFlipbook* CharacterDashAnimation;
 
 	/** Top down camera */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
@@ -104,6 +108,8 @@ protected:
 
 	FTimerHandle TimerHandle_MovingThenAttack;
 
+	FTimerHandle TimerHandle_DashReset;
+
 	UPROPERTY(EditAnywhere, Category = "GamePlay")
 		float AttackTime;
 
@@ -114,6 +120,10 @@ protected:
 		void ResetAnimation();
 
 	void MoveWhenAttack();
+
+	void Dash();
+
+	bool bIsDashing;
 
 	float CharOrigMovementSpeed;
 

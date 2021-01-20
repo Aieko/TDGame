@@ -141,6 +141,10 @@ void ATDPaperCharacter::DetermineState()
 	 {
 		 NewState = ECharacterState::AttackCombo2;
 	 }
+	if (bIsDashing)
+	{
+		NewState = ECharacterState::Dashing;
+	}
 
 	SetCharacterState(NewState);
 
@@ -155,6 +159,11 @@ void ATDPaperCharacter::SetCharacterState(ECharacterState NewState)
 	if (PrevState == ECharacterState::Default && NewState == ECharacterState::Interact)
 	{
 		Interact();
+	}
+	
+	if (NewState == ECharacterState::Dashing)
+	{
+		bCanAttack = false;
 	}
 	
 }
@@ -189,6 +198,11 @@ void ATDPaperCharacter::UpdateAnimation()
 		GetSprite()->SetFlipbook(CharacterAttackAnimation2);
 		GetCharacterMovement()->MaxWalkSpeed *= 0.8f;
 		MoveWhenAttack();
+	}
+	else if (bIsDashing)
+	{
+		GetSprite()->SetFlipbook(CharacterDashAnimation);
+		GetCharacterMovement()->MaxWalkSpeed *= 1.005f;
 	}
 	else
 	{
@@ -320,6 +334,14 @@ void ATDPaperCharacter::MoveWhenAttack()
 
 }
 
+void ATDPaperCharacter::Dash()
+{
+	bIsDashing = true;
+	GetCapsuleComponent()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Ignore);
+	bCanAttack = false;
+	GetWorldTimerManager().SetTimer(TimerHandle_DashReset, this, &ATDPaperCharacter::ResetAnimation, 0.8, false);
+}
+
 void ATDPaperCharacter::ContinueAttack()
 {
 	
@@ -347,6 +369,13 @@ void ATDPaperCharacter::ResetAttack()
 
 void ATDPaperCharacter::ResetAnimation()
 {
+	if (bIsDashing)
+	{
+		bIsDashing = false;
+		GetCapsuleComponent()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Block);
+		DetermineState();
+		bCanAttack = true;
+	}
 	if (bAttacking)
 	{
 		bAttacking = false;
@@ -377,4 +406,5 @@ void ATDPaperCharacter::SetupPlayerInputComponent(UInputComponent * PlayerInputC
 	PlayerInputComponent->BindAxis("MoveRight", this, &ATDPaperCharacter::MoveRight);
 
 	PlayerInputComponent->BindAction("Attack", IE_Pressed, this, &ATDPaperCharacter::StartAttack);
+	PlayerInputComponent->BindAction("Dash", IE_Pressed, this, &ATDPaperCharacter::Dash);
 }
