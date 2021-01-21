@@ -97,10 +97,10 @@ ATDFoe::ATDFoe()
 	FlipbookComponent->SetupAttachment(GetRootComponent());
 
 	this->BaseEyeHeight = 2.0f;
-	//@todo SetMaxMovementComp to Pawn
-
-
+	
 	MovementComp = CreateDefaultSubobject<UFloatingPawnMovement>(TEXT("MovementComp"));
+	MovementComp->MaxSpeed = 40.0f;
+
 	HealthComp = CreateDefaultSubobject<UTDHealthComponent>(TEXT("HealthComp"));
 
 	HealthComp->OnHealthChanged.AddDynamic(this, &ATDFoe::HandleTakeDamage);
