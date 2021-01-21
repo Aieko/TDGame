@@ -4,7 +4,6 @@
 #include "TDGame/Public/TDFoe.h"
 #include "NavigationSystem.h"
 #include "NavigationPath.h"
-#include "Kismet/GameplayStatics.h"
 #include "TDGame/Public/TDHealthComponent.h"
 #include "Blueprint/AIBlueprintHelperLibrary.h"
 #include "GameFramework/FloatingPawnMovement.h"
@@ -64,7 +63,12 @@ ATDFoe::ATDFoe()
 
 	PawnSensingComp = CreateDefaultSubobject<UPawnSensingComponent>(TEXT("PawnSensingComp"));
 	PawnSensingComp->OnHearNoise.AddDynamic(this, &ATDFoe::OnNoiseHeard);
-	
+	PawnSensingComp->HearingThreshold = 65.0f;
+	PawnSensingComp->LOSHearingThreshold = 76.0f;
+	PawnSensingComp->SightRadius = 0.0f;
+	PawnSensingComp->bSeePawns = false;
+	PawnSensingComp->SetPeripheralVisionAngle(0.0f);
+
 	PawnNoiseEmitterComp = CreateDefaultSubobject<UPawnNoiseEmitterComponent>(TEXT("PawnNoiseEmitterComp"));
 
 	
@@ -91,6 +95,9 @@ ATDFoe::ATDFoe()
 	FlipbookComponent->SetCastShadow(false);
 	FlipbookComponent->SetCanEverAffectNavigation(false);
 	FlipbookComponent->SetupAttachment(GetRootComponent());
+
+	this->BaseEyeHeight = 2.0f;
+	//@todo SetMaxMovementComp to Pawn
 
 
 	MovementComp = CreateDefaultSubobject<UFloatingPawnMovement>(TEXT("MovementComp"));
@@ -415,10 +422,7 @@ void ATDFoe::SetFoeState(EFoeState NewState)
 	}
 }
 
-void ATDFoe::ResetCatch()
-{
-	EnableInput(UGameplayStatics::GetPlayerController(GetWorld(), 0));
-}
+
 
 //Cheking is where a player around
 void ATDFoe::OnNoiseHeard(APawn * NoiseInstigator, const FVector & Location, float Volume)
@@ -461,19 +465,16 @@ void ATDFoe::NotifyActorBeginOverlap(AActor * OtherActor)
 	Super::NotifyActorBeginOverlap(OtherActor);
 
 	ATDBase* EnemyBase = Cast<ATDBase>(OtherActor);
-
-	ATDPaperCharacter* Player = Cast<ATDPaperCharacter>(OtherActor);
+	APlayerController* PlayerController = GetWorld()->GetFirstPlayerController();
+	ATDPaperCharacter* PlayerPawn = Cast<ATDPaperCharacter>(OtherActor);
+	Player = PlayerPawn;
 	if (OtherActor == EnemyBase)
 	{
 		this->Destroy();
 		UGameplayStatics::ApplyDamage(OtherActor, 1.0f, GetController(), this, nullptr);
 		
 	}
-	if (OtherActor == Player)
-	{
-		DisableInput(UGameplayStatics::GetPlayerController(GetWorld(), 0));
-		GetWorldTimerManager().SetTimer(TimerHandle_ResetCatch, this, &ATDFoe::ResetCatch, 0.1f, false);
-	}
+	
 }
 
 

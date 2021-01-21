@@ -102,16 +102,14 @@ protected:
 
 	FTimerHandle TimerHandle_RefreshPath;
 
-	FTimerHandle TimerHandle_ResetCatch;
 
-	void ResetCatch();
 
 	UPROPERTY(EditDefaultsOnly, Category = "Foe")
 		float RequiredDistanceToTarget;
 	UPROPERTY(EditDefaultsOnly, Category = "Foe")
 		float DistanceToBreakChasing;
 
-	
+	class ATDPaperCharacter* Player;
 	
 	//						******PAWN SENSING******
 
@@ -128,6 +126,8 @@ protected:
 
 	bool bIsDead = false;
 public:	
+
+	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
