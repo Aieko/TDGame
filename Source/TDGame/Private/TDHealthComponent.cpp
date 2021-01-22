@@ -30,29 +30,29 @@ void UTDHealthComponent::BeginPlay()
 	
 }
 
-void UTDHealthComponent::OnRep_Health(float OldHealth)
+void UTDHealthComponent::OnRep_Health(int32 OldHealth)
 {
-	float Damage = Health - OldHealth;
+	int32 Damage = Health - OldHealth;
 	OnHealthChanged.Broadcast(this, Health, Damage, nullptr, nullptr, nullptr);
 }
 
 void UTDHealthComponent::HandleTakeAnyDamage(AActor * DamagedActor, float Damage, const UDamageType * DamageType, AController * InstigatedBy, AActor * DamageCauser)
-{
-	if (Damage <= 0.0f || bIsDead)
+{	
+	if (Damage <= 0 || bIsDead)
 	{
 		return;
 	}
 
-	Health = FMath::Clamp(Health - Damage, 0.0f, DefaultHealth);
+	Health = FMath::Clamp(int(Health - Damage), 0, DefaultHealth);
 
 	UE_LOG(LogTemp, Log, TEXT("Health Changed: %s"), *FString::SanitizeFloat(Health));
 
-	bIsDead = Health <= 0.0f;
+	bIsDead = Health <= 0;
 
 	OnHealthChanged.Broadcast(this, Health, Damage, DamageType, InstigatedBy, DamageCauser);
 }
 
-float UTDHealthComponent::GetHealth()
+int32 UTDHealthComponent::GetHealth()
 {
 	return Health;
 }

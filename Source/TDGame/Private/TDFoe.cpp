@@ -86,10 +86,8 @@ ATDFoe::ATDFoe()
 	RootComponent = CollisionComp;
 	
 	FlipbookComponent = CreateDefaultSubobject<UPaperFlipbookComponent>(TEXT("SpriteComp"));
-	FoeIdleAnimation = ConstructorStatics.FoeIdleAsset.Get();
-	FoeWalkAnimation = ConstructorStatics1.FoeWalkAsset.Get();
-	FlipbookComponent->SetFlipbook(FoeIdleAnimation);
 	FlipbookComponent->SetRelativeLocation(FVector(-1.0f, 0.0f, 5.0f));
+	FlipbookComponent->SetRelativeScale3D(FVector(1.5f, 1.5f, 1.5f));
 	FlipbookComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	FlipbookComponent->SetGenerateOverlapEvents(false);
 	FlipbookComponent->SetCastShadow(false);
@@ -319,7 +317,7 @@ void ATDFoe::RefreshPath()
 		NextPathPoint = GetNextPathPoint();
 }
 
-void ATDFoe::HandleTakeDamage(UTDHealthComponent * OwningHealthComp, float Health, float HealthDelta, const UDamageType * DamageType, AController * InstigatedBy, AActor * DamageCauser)
+void ATDFoe::HandleTakeDamage(UTDHealthComponent * OwningHealthComp, int32 Health, int32 HealthDelta, const UDamageType * DamageType, AController * InstigatedBy, AActor * DamageCauser)
 {
 	//Pushing while handling damage
 	//@ todo foes are jumping on over foes when get hit cuz of collision, so it's need to be fix
@@ -347,7 +345,7 @@ void ATDFoe::HandleTakeDamage(UTDHealthComponent * OwningHealthComp, float Healt
 	}
 	
 	//cheking if dead or not and clearing all data
-	if (Health <= 0.0f)
+	if (Health <= 0)
 	{
 		bIsDead = true;
 		if (GetController() && DeathAnimation)
@@ -465,13 +463,10 @@ void ATDFoe::NotifyActorBeginOverlap(AActor * OtherActor)
 	Super::NotifyActorBeginOverlap(OtherActor);
 
 	ATDBase* EnemyBase = Cast<ATDBase>(OtherActor);
-	APlayerController* PlayerController = GetWorld()->GetFirstPlayerController();
-	ATDPaperCharacter* PlayerPawn = Cast<ATDPaperCharacter>(OtherActor);
-	Player = PlayerPawn;
 	if (OtherActor == EnemyBase)
 	{
-		this->Destroy();
 		UGameplayStatics::ApplyDamage(OtherActor, 1.0f, GetController(), this, nullptr);
+		this->Destroy();
 		
 	}
 	

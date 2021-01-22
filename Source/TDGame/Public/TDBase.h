@@ -25,7 +25,7 @@ public:
 	USphereComponent* CollisionComp;
 
 	UFUNCTION()
-	void HandleTakeDamage(UTDHealthComponent* OwningHealthComp, float Health, float HealthDelta, const class UDamageType* DamageType,
+	void HandleTakeDamage(UTDHealthComponent* OwningHealthComp, int32 Health, int32 HealthDelta, const class UDamageType* DamageType,
 			class AController* InstigatedBy, AActor* DamageCauser);
 
 protected:
