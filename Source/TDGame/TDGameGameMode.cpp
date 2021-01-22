@@ -15,4 +15,6 @@ ATDGameGameMode::ATDGameGameMode()
 	{
 		DefaultPawnClass = PlayerPawnBPClass.Class;
 	}*/
+
+	
 }
