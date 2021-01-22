@@ -105,6 +105,7 @@ ATDPaperCharacter::ATDPaperCharacter(const FObjectInitializer& PCIP)
 	TopDownCameraComponent->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
 
 	HealthComp = CreateDefaultSubobject<UTDHealthComponent>(TEXT("HealthComp"));
+	HealthComp->DefaultHealth = 6;
 
 	AttackTime = 0.5f;
 
@@ -202,7 +203,7 @@ void ATDPaperCharacter::UpdateAnimation()
 	else if (bIsDashing)
 	{
 		GetSprite()->SetFlipbook(CharacterDashAnimation);
-		GetCharacterMovement()->MaxWalkSpeed *= 1.005f;
+		
 	}
 	else
 	{
@@ -336,23 +337,39 @@ void ATDPaperCharacter::MoveWhenAttack()
 
 void ATDPaperCharacter::Dash()
 {
-	bIsDashing = true;
-	GetCapsuleComponent()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Ignore);
-	bCanAttack = false;
-	GetWorldTimerManager().SetTimer(TimerHandle_DashReset, this, &ATDPaperCharacter::ResetAnimation, 0.8, false);
+	if (bCanDash)
+	{
+		bIsDashing = true;
+		GetCapsuleComponent()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Ignore);
+		bCanAttack = false;
+		FVector TeleportLoc = GetActorLocation();
+		if (!bIsTurned)
+		{
+			TeleportLoc.Y -= 50.f;
+		}
+		else
+		{
+			TeleportLoc.Y += 50.f;
+		}
+		GetCapsuleComponent()->SetRelativeLocation(TeleportLoc);
+
+		GetWorldTimerManager().SetTimer(TimerHandle_DashResetAnimation, this, &ATDPaperCharacter::ResetAnimation, 0.3f, false);
+
+		bCanDash = false;
+
+		GetWorldTimerManager().SetTimer(TimerHandle_ResetDashAbility, this, &ATDPaperCharacter::ResetDashAbility, 3.0f, false);
+	}
+
+
 }
 
-void ATDPaperCharacter::ContinueAttack()
+void ATDPaperCharacter::ResetDashAbility()
 {
-	
-	bCanAttack = true;
-	ComboAttack += 1;
-	GetWorldTimerManager().SetTimer(TimerHandle_AttackReset, this, &ATDPaperCharacter::ResetAttack, 2.0f - AttackCD, false);
+	bCanDash = true;
 }
-void ATDPaperCharacter::Interact()
-{
 
-}
+
+
 void ATDPaperCharacter::ResetAttack()
 {
 	
@@ -364,8 +381,6 @@ void ATDPaperCharacter::ResetAttack()
 	SetCharacterState(ECharacterState::Default);
 	
 }
-
-
 
 void ATDPaperCharacter::ResetAnimation()
 {
@@ -382,6 +397,19 @@ void ATDPaperCharacter::ResetAnimation()
 	}
 }
 
+void ATDPaperCharacter::ContinueAttack()
+{
+
+	bCanAttack = true;
+	ComboAttack += 1;
+	GetWorldTimerManager().SetTimer(TimerHandle_AttackReset, this, &ATDPaperCharacter::ResetAttack, 2.0f - AttackCD, false);
+}
+
+void ATDPaperCharacter::Interact()
+{
+
+}
+
 void ATDPaperCharacter::OnOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
 	int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
@@ -389,6 +417,16 @@ void ATDPaperCharacter::OnOverlap(UPrimitiveComponent* OverlappedComp, AActor* O
 	if (OtherActor)
 	{
 		
+	}
+}
+
+void ATDPaperCharacter::HandleTakeDamage(UTDHealthComponent * OwningHealthComp, int32 Health, int32 HealthDelta, const UDamageType * DamageType, AController * InstigatedBy, AActor * DamageCauser)
+{
+	if (Health <= 0)
+	{
+		APlayerController* PlayerController = GetWorld()->GetFirstPlayerController();
+		bIsDead = true;
+		this->DisableInput(PlayerController);
 	}
 }
 

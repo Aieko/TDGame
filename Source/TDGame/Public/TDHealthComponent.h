@@ -6,7 +6,7 @@
 #include "Components/ActorComponent.h"
 #include "TDHealthComponent.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_SixParams(FOnHealthChangedSignature, UTDHealthComponent*, OwningHealthComp, float, Health, float, HealthDelta, const class UDamageType*, DamageType, class AController*, InstigatedBy, AActor*, DamageCauser);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_SixParams(FOnHealthChangedSignature, UTDHealthComponent*, OwningHealthComp, int32, Health, int32, HealthDelta, const class UDamageType*, DamageType, class AController*, InstigatedBy, AActor*, DamageCauser);
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class TDGAME_API UTDHealthComponent : public UActorComponent
 {
@@ -23,10 +23,10 @@ protected:
 	bool bIsDead;
 
 	UPROPERTY(ReplicatedUsing = OnRep_Health, BlueprintReadOnly, Category = "HealthComponent")
-	float Health;
+	int32 Health;
 
 	UFUNCTION()
-	void OnRep_Health(float OldHealth);
+	void OnRep_Health(int32 OldHealth);
 
 	
 	UFUNCTION()
@@ -35,10 +35,10 @@ protected:
 
 public:	
 
-	float GetHealth();
+	int32 GetHealth();
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "HealthComponent")
-		float DefaultHealth;
+		int32 DefaultHealth;
 
 	UPROPERTY(BlueprintAssignable, Category = "Events")
 	FOnHealthChangedSignature OnHealthChanged;

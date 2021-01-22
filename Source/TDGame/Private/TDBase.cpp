@@ -46,7 +46,7 @@ ATDBase::ATDBase()
 	HealthComp->DefaultHealth = 10;
 }
 
-void ATDBase::HandleTakeDamage(UTDHealthComponent * OwningHealthComp, float Health, float HealthDelta, const UDamageType * DamageType, AController * InstigatedBy, AActor * DamageCauser)
+void ATDBase::HandleTakeDamage(UTDHealthComponent * OwningHealthComp, int32 Health, int32 HealthDelta, const UDamageType * DamageType, AController * InstigatedBy, AActor * DamageCauser)
 {
 
 }

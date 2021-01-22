@@ -102,16 +102,14 @@ protected:
 
 	FTimerHandle TimerHandle_RefreshPath;
 
-	FTimerHandle TimerHandle_ResetCatch;
 
-	void ResetCatch();
 
 	UPROPERTY(EditDefaultsOnly, Category = "Foe")
 		float RequiredDistanceToTarget;
 	UPROPERTY(EditDefaultsOnly, Category = "Foe")
 		float DistanceToBreakChasing;
 
-	
+	class ATDPaperCharacter* Player;
 	
 	//						******PAWN SENSING******
 
@@ -121,13 +119,15 @@ protected:
 	FRotator OriginalRotation;
 	//				  ******HANDLE DAMAGE & MAKE DAMAGE******
 	UFUNCTION()
-	void HandleTakeDamage(UTDHealthComponent* OwningHealthComp, float Health, float HealthDelta, const class UDamageType* DamageType,
+	void HandleTakeDamage(UTDHealthComponent* OwningHealthComp, int32 Health, int32 HealthDelta, const class UDamageType* DamageType,
 		class AController* InstigatedBy, AActor* DamageCauser);
 
 	UMaterialInstanceDynamic* MatInst;
 
 	bool bIsDead = false;
 public:	
+
+	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 

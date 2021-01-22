@@ -4,7 +4,6 @@
 #include "TDGame/Public/TDFoe.h"
 #include "NavigationSystem.h"
 #include "NavigationPath.h"
-#include "Kismet/GameplayStatics.h"
 #include "TDGame/Public/TDHealthComponent.h"
 #include "Blueprint/AIBlueprintHelperLibrary.h"
 #include "GameFramework/FloatingPawnMovement.h"
@@ -64,7 +63,12 @@ ATDFoe::ATDFoe()
 
 	PawnSensingComp = CreateDefaultSubobject<UPawnSensingComponent>(TEXT("PawnSensingComp"));
 	PawnSensingComp->OnHearNoise.AddDynamic(this, &ATDFoe::OnNoiseHeard);
-	
+	PawnSensingComp->HearingThreshold = 65.0f;
+	PawnSensingComp->LOSHearingThreshold = 76.0f;
+	PawnSensingComp->SightRadius = 0.0f;
+	PawnSensingComp->bSeePawns = false;
+	PawnSensingComp->SetPeripheralVisionAngle(0.0f);
+
 	PawnNoiseEmitterComp = CreateDefaultSubobject<UPawnNoiseEmitterComponent>(TEXT("PawnNoiseEmitterComp"));
 
 	
@@ -82,18 +86,19 @@ ATDFoe::ATDFoe()
 	RootComponent = CollisionComp;
 	
 	FlipbookComponent = CreateDefaultSubobject<UPaperFlipbookComponent>(TEXT("SpriteComp"));
-	FoeIdleAnimation = ConstructorStatics.FoeIdleAsset.Get();
-	FoeWalkAnimation = ConstructorStatics1.FoeWalkAsset.Get();
-	FlipbookComponent->SetFlipbook(FoeIdleAnimation);
 	FlipbookComponent->SetRelativeLocation(FVector(-1.0f, 0.0f, 5.0f));
+	FlipbookComponent->SetRelativeScale3D(FVector(1.5f, 1.5f, 1.5f));
 	FlipbookComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	FlipbookComponent->SetGenerateOverlapEvents(false);
 	FlipbookComponent->SetCastShadow(false);
 	FlipbookComponent->SetCanEverAffectNavigation(false);
 	FlipbookComponent->SetupAttachment(GetRootComponent());
 
-
+	this->BaseEyeHeight = 2.0f;
+	
 	MovementComp = CreateDefaultSubobject<UFloatingPawnMovement>(TEXT("MovementComp"));
+	MovementComp->MaxSpeed = 40.0f;
+
 	HealthComp = CreateDefaultSubobject<UTDHealthComponent>(TEXT("HealthComp"));
 
 	HealthComp->OnHealthChanged.AddDynamic(this, &ATDFoe::HandleTakeDamage);
@@ -312,7 +317,7 @@ void ATDFoe::RefreshPath()
 		NextPathPoint = GetNextPathPoint();
 }
 
-void ATDFoe::HandleTakeDamage(UTDHealthComponent * OwningHealthComp, float Health, float HealthDelta, const UDamageType * DamageType, AController * InstigatedBy, AActor * DamageCauser)
+void ATDFoe::HandleTakeDamage(UTDHealthComponent * OwningHealthComp, int32 Health, int32 HealthDelta, const UDamageType * DamageType, AController * InstigatedBy, AActor * DamageCauser)
 {
 	//Pushing while handling damage
 	//@ todo foes are jumping on over foes when get hit cuz of collision, so it's need to be fix
@@ -340,7 +345,7 @@ void ATDFoe::HandleTakeDamage(UTDHealthComponent * OwningHealthComp, float Healt
 	}
 	
 	//cheking if dead or not and clearing all data
-	if (Health <= 0.0f)
+	if (Health <= 0)
 	{
 		bIsDead = true;
 		if (GetController() && DeathAnimation)
@@ -415,10 +420,7 @@ void ATDFoe::SetFoeState(EFoeState NewState)
 	}
 }
 
-void ATDFoe::ResetCatch()
-{
-	EnableInput(UGameplayStatics::GetPlayerController(GetWorld(), 0));
-}
+
 
 //Cheking is where a player around
 void ATDFoe::OnNoiseHeard(APawn * NoiseInstigator, const FVector & Location, float Volume)
@@ -461,19 +463,13 @@ void ATDFoe::NotifyActorBeginOverlap(AActor * OtherActor)
 	Super::NotifyActorBeginOverlap(OtherActor);
 
 	ATDBase* EnemyBase = Cast<ATDBase>(OtherActor);
-
-	ATDPaperCharacter* Player = Cast<ATDPaperCharacter>(OtherActor);
 	if (OtherActor == EnemyBase)
 	{
-		this->Destroy();
 		UGameplayStatics::ApplyDamage(OtherActor, 1.0f, GetController(), this, nullptr);
+		this->Destroy();
 		
 	}
-	if (OtherActor == Player)
-	{
-		DisableInput(UGameplayStatics::GetPlayerController(GetWorld(), 0));
-		GetWorldTimerManager().SetTimer(TimerHandle_ResetCatch, this, &ATDFoe::ResetCatch, 0.1f, false);
-	}
+	
 }
 
 
