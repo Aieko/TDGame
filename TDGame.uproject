@@ -17,7 +17,7 @@
 	"Plugins": [
 		{
 			"Name": "MegascansPlugin",
-			"Enabled": true,
+			"Enabled": false,
 			"SupportedTargetPlatforms": [
 				"Win64",
 				"Mac",
