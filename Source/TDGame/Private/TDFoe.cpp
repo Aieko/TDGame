@@ -100,6 +100,7 @@ ATDFoe::ATDFoe()
 	MovementComp->MaxSpeed = 40.0f;
 
 	HealthComp = CreateDefaultSubobject<UTDHealthComponent>(TEXT("HealthComp"));
+	HealthComp->DefaultHealth = 10;
 
 	HealthComp->OnHealthChanged.AddDynamic(this, &ATDFoe::HandleTakeDamage);
 
@@ -322,13 +323,14 @@ void ATDFoe::HandleTakeDamage(UTDHealthComponent * OwningHealthComp, int32 Healt
 	//Pushing while handling damage
 	//@ todo foes are jumping on over foes when get hit cuz of collision, so it's need to be fix
 	FVector ImpulseDirection = GetActorLocation();
-	if (!bIsTurned)
+	if (bIsTurned)
 	{
-		ImpulseDirection.Y -= 30;
+		
+		ImpulseDirection.Y += 30;
 	}
 	else
 	{
-		ImpulseDirection.Y += 30;
+		ImpulseDirection.Y -= 30;
 	}
 	
 	CollisionComp->SetRelativeLocation(ImpulseDirection);

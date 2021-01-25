@@ -14,7 +14,10 @@ class TDGAME_API ATDMinion : public ATDFoe
 {
 	GENERATED_BODY()
 
-		
+public:
+
+	ATDMinion();
+
 protected:
 
 	class ATDPaperCharacter* Player;
