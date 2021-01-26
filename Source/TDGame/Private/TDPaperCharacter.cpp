@@ -22,6 +22,7 @@
 
 
 
+
 ATDPaperCharacter::ATDPaperCharacter(const FObjectInitializer& PCIP)
 	: Super(PCIP)
 {
@@ -338,62 +339,67 @@ void ATDPaperCharacter::MoveRight(float Value)
 //Attacking function
 void ATDPaperCharacter::StartAttack()
 {
-	//Setting ignored objects
-	TArray<AActor*> IgnoredActors;
-	IgnoredActors.Add(this);
-	if (Base)
+	if (!bIsTalking)
 	{
-		IgnoredActors.Add(Base);
-	}
+		//Setting ignored objects
+		TArray<AActor*> IgnoredActors;
+		IgnoredActors.Add(this);
+		if (Base)
+		{
+			IgnoredActors.Add(Base);
+		}
 
 
-	FVector CharAttackHitBox = GetActorLocation();
-	
-	if (bIsTurned)
-	{
-		
-		CharAttackHitBox.Y += YAttackDeviation;
-	}
-	else
+		FVector CharAttackHitBox = GetActorLocation();
+
+		if (bIsTurned)
+		{
+
+			CharAttackHitBox.Y += YAttackDeviation;
+		}
+		else
 		{
 			CharAttackHitBox.Y -= YAttackDeviation;
 		}
 
-	if (bCanAttack && ComboAttack == 1)
-	{
-		
+		if (bCanAttack && ComboAttack == 1)
+		{
 
-		UGameplayStatics::ApplyRadialDamage(this, int32(1), CharAttackHitBox, 30.0f, nullptr, IgnoredActors, this, GetInstigatorController(), true);
 
-		bCanAttack = false;
+			UGameplayStatics::ApplyRadialDamage(this, int32(1), CharAttackHitBox, 30.0f, nullptr, IgnoredActors, this, GetInstigatorController(), true);
 
-		GetWorldTimerManager().SetTimer(TimerHandle_AttackCD, this, &ATDPaperCharacter::ContinueAttack, AttackCD, false);
+			bCanAttack = false;
 
-		GetWorldTimerManager().SetTimer(TimerHandle_AttackReset, this, &ATDPaperCharacter::ResetAttack, 1.2f, false);
+			GetWorldTimerManager().SetTimer(TimerHandle_AttackCD, this, &ATDPaperCharacter::ContinueAttack, AttackCD, false);
 
-		bAttacking = true;
+			GetWorldTimerManager().SetTimer(TimerHandle_AttackReset, this, &ATDPaperCharacter::ResetAttack, 1.2f, false);
 
-		GetWorldTimerManager().SetTimer(TimerHandle_AttackAnimationTime, this, &ATDPaperCharacter::ResetAnimation, AttackTime, false);
+			bAttacking = true;
 
-		
-		DetermineState();
+			GetWorldTimerManager().SetTimer(TimerHandle_AttackAnimationTime, this, &ATDPaperCharacter::ResetAnimation, AttackTime, false);
+
+
+			DetermineState();
+
+		}
+		else if (bCanAttack && ComboAttack == 2)
+		{
+			UGameplayStatics::ApplyRadialDamage(this, int32(1), CharAttackHitBox, 30.0f, nullptr, IgnoredActors, this, GetInstigatorController(), true);
+
+			bCanAttack = false;
+
+			GetWorldTimerManager().SetTimer(TimerHandle_AttackReset, this, &ATDPaperCharacter::ResetAttack, 0.5f, false);
+
+			bAttacking = true;
+
+			GetWorldTimerManager().SetTimer(TimerHandle_AttackAnimationTime, this, &ATDPaperCharacter::ResetAnimation, AttackTime, false);
+
+
+			DetermineState();
+		}
 
 	}
-	else if (bCanAttack && ComboAttack == 2)
-	{
-		UGameplayStatics::ApplyRadialDamage(this, int32(1), CharAttackHitBox, 30.0f, nullptr, IgnoredActors, this, GetInstigatorController(), true);
-
-		bCanAttack = false;
-
-		GetWorldTimerManager().SetTimer(TimerHandle_AttackReset, this, &ATDPaperCharacter::ResetAttack, 0.6f, false);
-
-		bAttacking = true;
-
-		GetWorldTimerManager().SetTimer(TimerHandle_AttackAnimationTime, this, &ATDPaperCharacter::ResetAnimation, AttackTime, false);
-		
-		
-		DetermineState();
-	}
+	
 
 }
 
@@ -585,14 +591,7 @@ void ATDPaperCharacter::ToggleTalking()
 		//If we are in talk range handle the talk status and the UI
 		bIsTalking = !bIsTalking;
 		ToggleUI();
-		if (bIsTalking && AssociatedPawn)
-		{
-			//The associated pawn is polite enough to face us when we talk to him!
-			/*FVector Location = AssociatedPawn->GetActorLocation();
-			FVector TargetLocation = GetActorLocation();
-
-			AssociatedPawn->SetActorRotation((TargetLocation - Location).Rotation());*/
-		}
+		
 
 	}
 }
@@ -633,6 +632,8 @@ void ATDPaperCharacter::Talk(FString Excerpt, TArray<FSubtitle>& Subtitles)
 	//Get all the row names based on our stored lines
 	TArray<FName> PlayerOptions = AvailableLines->GetRowNames();
 
+	
+
 	for (auto It : PlayerOptions)
 	{
 		//Search inside the available lines table to find the pressed Excerpt from the UI
@@ -655,16 +656,15 @@ void ATDPaperCharacter::Talk(FString Excerpt, TArray<FSubtitle>& Subtitles)
 
 				TArray<FSubtitle> SubtitlesToDisplay;
 
-				float TotalSubsTime = 0.f;
-
 				for (int32 i = 0; i < Subtitles.Num(); i++)
 				{
 					TotalSubsTime += Subtitles[i].AssociatedTime;
 				}
-
+				
 				//Just a hardcoded value in order for the AI not to answer right after our subs.
 				//It would be better if we expose that to our editor? Sure!
-				TotalSubsTime += 1.f;
+				//TotalSubsTime += 1.0f;
+			
 
 				//Tell the associated pawn to answer to our character after the specified time!
 				AssociatedPawn->AnswerToCharacter(It, SubtitlesToDisplay, TotalSubsTime);

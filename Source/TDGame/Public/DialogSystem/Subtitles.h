@@ -17,6 +17,6 @@ struct FSubtitle : public FTableRowBase
 		FString Subtitle;
 
 	/*The relative time in seconds, that the subtitle will appear*/
-	UPROPERTY(EditAnywhere)
+		UPROPERTY(EditAnywhere)
 		float AssociatedTime;
 };

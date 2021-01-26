@@ -94,7 +94,7 @@ void ATDIdleNPC::AnswerToCharacter(FName PlayerLine, TArray<FSubtitle>& Subtitle
 	FDialog* Dialog = AILines->FindRow<FDialog>(PlayerLine, ContextString);
 
 	ATDPaperCharacter* MainChar = Cast<ATDPaperCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
-
+	
 	if (Dialog && MainChar)
 	{
 		FTimerHandle TimerHandle;
@@ -105,5 +105,9 @@ void ATDIdleNPC::AnswerToCharacter(FName PlayerLine, TArray<FSubtitle>& Subtitle
 		//Talk to the player after the delay time has passed
 		GetWorld()->GetTimerManager().SetTimer(TimerHandle, TimerDel, delay, false);
 	}
+	
+
+	//Talk(Dialog->SFX, Dialog->Subtitles);
+	
 }
 

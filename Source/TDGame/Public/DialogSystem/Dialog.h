@@ -15,7 +15,7 @@ struct FDialog : public FTableRowBase
 	GENERATED_USTRUCT_BODY()
 
 		/*The question's excerpt - this will be shown inside our UI*/
-		UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere)
 		FString QuestionExcerpt;
 
 	/*The actual SFX that we're going to play*/

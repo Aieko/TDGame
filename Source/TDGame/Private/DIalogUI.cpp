@@ -2,6 +2,7 @@
 
 
 #include "TDGame/Public/DIalogUI.h"
+#include "Kismet/GameplayStatics.h"
 
 void UDIalogUI::UpdateSubtitles(TArray<FSubtitle> Subtitles)
 {

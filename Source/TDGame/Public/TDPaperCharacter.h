@@ -246,6 +246,8 @@ public:
 	UDIalogUI* GetUI() { return UI; }
 
 protected:
+	UPROPERTY(EditAnywhere, Category = DialogSystem)
+	float TotalSubsTime = 0.f;
 
 	/*The component responsible for playing our SFX*/
 	UPROPERTY(VisibleAnywhere)
