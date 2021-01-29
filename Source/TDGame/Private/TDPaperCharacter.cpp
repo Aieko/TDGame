@@ -291,8 +291,13 @@ void ATDPaperCharacter::UpdateCharacter()
 //Move forward input
 void ATDPaperCharacter::MoveForward(float Value)
 {
-	if ((Controller) && (Value != 0.0f) && !bIsTalking)
+	if ((Controller) && (Value != 0.0f) && !bIsTalking && CanMove)
 	{
+		bool IsLooping = GetSprite()->IsLooping();
+		if (!IsLooping)
+		{
+			GetSprite()->SetLooping(true);
+		}
 		FRotator ControlRot = GetControlRotation();
 		ControlRot.Pitch = 0.0f;
 		ControlRot.Roll = 0.0f;
@@ -309,8 +314,14 @@ void ATDPaperCharacter::MoveForward(float Value)
 //Move sideways input
 void ATDPaperCharacter::MoveRight(float Value)
 {
-	if ((Controller) && (Value != 0.0f) && !bIsTalking)
+	if ((Controller) && (Value != 0.0f) && !bIsTalking && CanMove)
 	{
+		bool IsLooping = GetSprite()->IsLooping();
+		if (!IsLooping)
+		{
+			GetSprite()->SetLooping(true);
+		}
+
 		FRotator ControlRot = GetControlRotation();
 		ControlRot.Pitch = 0.0f;
 		ControlRot.Roll = 0.0f;

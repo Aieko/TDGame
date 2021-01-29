@@ -9,7 +9,7 @@
 /**
  * 
  */
-UCLASS(Blueprintable)
+UCLASS()
 class TDGAME_API AQuest : public AInfo
 {
 	GENERATED_BODY()
@@ -24,6 +24,7 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaSeconds) override;
 
+
 public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Q")
 		TArray<class AObjective*> CurrentObjectives;
@@ -32,7 +33,7 @@ public:
 		TArray<TSubclassOf<AObjective>> Objectives;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Q")
-	class USoundCue* QuestStartSoundCue;
+		class USoundCue* QuestStartSoundCue;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Q")
 		FName QuestName;
@@ -45,6 +46,8 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Q")
 		bool IsQuestComplete() const;
+
+	
 
 	UFUNCTION(BlueprintCallable, Category = "Q")
 		bool CanUpdate(FName Objective);

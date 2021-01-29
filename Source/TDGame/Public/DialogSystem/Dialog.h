@@ -24,7 +24,7 @@ struct FDialog : public FTableRowBase
 
 	/*An array of the associated subtitles*/
 	UPROPERTY(EditAnywhere)
-	TArray<FSubtitle> Subtitles;
+		TArray<FSubtitle> Subtitles;
 
 	/*True if we want to wait for the AI to respond*/
 	UPROPERTY(EditAnywhere)

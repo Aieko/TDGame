@@ -7,21 +7,19 @@
 #include "TimerManager.h"
 #include "TDGame/Public/TDHealthComponent.h"
 
+
 ATDMinion::ATDMinion()
 {
 	HealthComp->DefaultHealth = 2;
 
+	
 
 }
 
-void ATDMinion::ResetCatchTime()
+void ATDMinion::ResetCatchTime(APawn* CatchedActor)
 {
-	APlayerController* PlayerController = GetWorld()->GetFirstPlayerController();
-	if (PlayerController)
-	{
-		Player->EnableInput(PlayerController);
-	}
 	
+ 	Player->CanMove = true;
 
 }
 
@@ -30,21 +28,32 @@ void ATDMinion::ResetCatchAbility()
 	bCanGrap = true;
 }
 
+void ATDMinion::BeginPlay()
+{
+
+	Super::BeginPlay();
+	
+	
+}
+
 void ATDMinion::NotifyActorBeginOverlap(AActor * OtherActor)
 {
-	APlayerController* PlayerController = GetWorld()->GetFirstPlayerController();
 	ATDPaperCharacter* PlayerPawn = Cast<ATDPaperCharacter>(OtherActor);
 	Player = PlayerPawn;
 
 	if (OtherActor == PlayerPawn && bCanGrap)
 	{
 		bCanGrap = false;
-		if (PlayerController)
-		{
-			Player->DisableInput(PlayerController);
-		}
-		GetWorldTimerManager().SetTimer(TimerHandle_ResetCatchTime, this, &ATDMinion::ResetCatchTime, 0.1f, false);
 		
+		Player->CanMove = false;
+
+		FTimerDelegate TimerDel;
+
+		TimerDel.BindUFunction(this, FName("ResetCatchTime"), Player);
+		
+		GetWorld()->GetTimerManager().SetTimer(TimerHandle_ResetCatchTime, TimerDel, 0.1f, false);
+
+
 		GetWorldTimerManager().SetTimer(TimerHandle_ResetCatchAbility, this, &ATDMinion::ResetCatchAbility, 5.0f, false);
 	}
 }

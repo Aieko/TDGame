@@ -20,6 +20,8 @@ public:
 
 protected:
 
+	class AObjective* AttachedObjective;
+
 	class ATDPaperCharacter* Player;
 
 	FTimerHandle TimerHandle_ResetCatchTime;
@@ -27,12 +29,14 @@ protected:
 	FTimerHandle TimerHandle_ResetCatchAbility;
 
 	UFUNCTION()
-		void ResetCatchTime();
+		void ResetCatchTime(APawn* CatchedActor);
 
 	UFUNCTION()
 		void ResetCatchAbility();
 
 	bool bCanGrap = true;
+
+	virtual void BeginPlay() override;
 	
 public:
 	

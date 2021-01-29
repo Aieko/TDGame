@@ -5,6 +5,7 @@
 #include "TDGame/Public/QuestSystem/Quest.h"
 #include "TDGame/Public/QuestSystem/Objective.h"
 #include "Sound/SoundCue.h"
+#include "EngineUtils.h"
 
 AQuest::AQuest() :
 	QuestName(NAME_None),
@@ -17,15 +18,25 @@ AQuest::AQuest() :
 void AQuest::BeginPlay()
 {
 	Super::BeginPlay();
-	UWorld* World = GetWorld();
-	if (World)
-	{
+	FVector Location(0.0f, 0.0f, 0.0f);
+	FRotator Rotation(0.0f, 0.0f, 0.0f);
+	FActorSpawnParameters SpawnInfo;
 		for (auto Objective : Objectives)
 		{
-		//	CurrentObjectives.Add(World->SpawnActor(Objective));
-			
+
+			//CurrentObjectives.Add(GetWorld()->SpawnActor<AObjective>(Location,Rotation, SpawnInfo));
+
+			//TActorIterator<AObjective> ExistObjectives(GetWorld(), AObjective::StaticClass());
+			for (TActorIterator<AObjective> It(GetWorld(), AObjective::StaticClass()); It; ++It)
+			{
+				AObjective* ExistObjective = *It;
+				if (ExistObjective)
+				{
+					CurrentObjectives.Add(ExistObjective);
+				}
+			}
 		}
-	}
+	
 }
 
 // Called every frame
@@ -45,26 +56,7 @@ bool AQuest::IsQuestComplete() const
 	return result;
 }
 
-bool AQuest::CanUpdate(FName Objective)
-{
-	bool PreviousIsComplete = true;
-	for (auto Obj : CurrentObjectives)
-	{
-		if (PreviousIsComplete)
-		{
-			if (Objective == Obj->ObjectiveName)
-				return true;
-			else
-				PreviousIsComplete = Obj->IsComplete() |
-				!Obj->MustBeCompletedToAdvance;
-		}
-		else
-		{
-			return false;
-		}
-	}
-	return true;
-}
+
 
 void AQuest::Update(FName Objective, int32 Progress)
 {
@@ -86,6 +78,26 @@ bool AQuest::TryUpdate(FName Objective, int32 Progress)
 		Update(Objective, Progress);
 	}
 	return result;
+}
+bool AQuest::CanUpdate(FName Objective)
+{
+	bool PreviousIsComplete = true;
+	for (auto Obj : CurrentObjectives)
+	{
+		if (PreviousIsComplete)
+		{
+			if (Objective == Obj->ObjectiveName)
+				return true;
+			else
+				PreviousIsComplete = Obj->IsComplete() |
+				!Obj->MustBeCompletedToAdvance;
+		}
+		else
+		{
+			return false;
+		}
+	}
+	return true;
 }
 
 float AQuest::QuestCompletion() const

@@ -21,6 +21,7 @@
 #include "Materials/MaterialInstanceDynamic.h"
 #include "TDGame/Public/TDPaperCharacter.h"
 #include "Kismet/GameplayStatics.h"
+#include "TDGame/Public/QuestSystem/Objective.h"
 
 static int32 DebugTDFoePathDrawing = 0;
 FAutoConsoleVariableRef CVARDebugTrackerBotDrawing(
@@ -114,8 +115,22 @@ ATDFoe::ATDFoe()
 void ATDFoe::BeginPlay()
 {
 	Super::BeginPlay();
+
 	//casting to enemy base on level
 	ATDBase* EnemyBase = Cast<ATDBase>(Base);
+
+	//Setting Objective
+	FVector Location = GetActorLocation();
+	FRotator Rotation(0.0f, 0.0f, 0.0f);
+	FActorSpawnParameters SpawnInfo;
+
+	AttachedObjective = GetWorld()->SpawnActor<AObjective>(Location, Rotation, SpawnInfo);
+
+	if (AttachedObjective)
+	{
+		AttachedObjective->AttachToActor(this, FAttachmentTransformRules::KeepRelativeTransform);
+	}
+
 	//validating enemy base
 	if (EnemyBase)
 	{
@@ -352,12 +367,17 @@ void ATDFoe::HandleTakeDamage(UTDHealthComponent * OwningHealthComp, int32 Healt
 		bIsDead = true;
 		if (GetController() && DeathAnimation)
 		{
-			GetController()->StopMovement();			
+			GetController()->StopMovement();
 			SetLifeSpan(0.6f);
+			AttachedObjective->Update(1);
+			
 		}
+
 		TargetPawn = nullptr;
 		NextPathPoint = GetActorLocation();
 		PawnSensingComp->bHearNoises = false;
+
+		
 	}
 }
 

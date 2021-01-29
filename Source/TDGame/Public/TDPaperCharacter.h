@@ -78,6 +78,8 @@ protected:
 
 	ECharacterState CurrentState;
 
+	
+
 	void SetCharacterState(ECharacterState NewState);
 
 	/** Called to choose the correct animation to play based on the character's movement state */
@@ -91,6 +93,8 @@ protected:
 	bool bIsDead = false;
 
 	bool bIsTurned = false;
+
+	
 
 	// Moving functions
 	void MoveForward(float Value);
@@ -197,6 +201,7 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+	bool CanMove = true;
 
 	//						***********DIALOG SYSTEM***********
 

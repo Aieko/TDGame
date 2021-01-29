@@ -32,7 +32,7 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-
+	class AObjective* AttachedObjective;
 
 	UPROPERTY(VisibleDefaultsOnly, Category = "Components")
 	UFloatingPawnMovement* MovementComp;
