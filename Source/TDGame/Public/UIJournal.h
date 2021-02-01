@@ -15,4 +15,17 @@ class TDGAME_API UUIJournal : public UUserWidget
 {
 	GENERATED_BODY()
 	
+public:
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Quest")
+		TArray<TSubclassOf<AQuest>> Quests;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Quest")
+		TArray<FString> ActiveQuests;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Quest")
+		TArray<FString> CompleteQuests;
+
+	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "DialogSystem")
+		void Show();
 };

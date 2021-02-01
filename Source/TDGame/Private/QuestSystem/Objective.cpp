@@ -1,7 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
-
-#include "TDGame/TDGame.h"
 #include "TDGame/Public/QuestSystem/Objective.h"
+#include "TDGame/TDGame.h"
+
 
 // Sets default values
 AObjective::AObjective() :
@@ -43,5 +43,5 @@ bool AObjective::IsComplete() const
 float AObjective::GetProgress() const
 {
 	check(TotalProgressNeeded != 0)
-		return (float)CurrentProgress / (float)TotalProgressNeeded;
+		return 	FMath::Clamp(((float)CurrentProgress / (float)TotalProgressNeeded),0.f,1.f);
 }

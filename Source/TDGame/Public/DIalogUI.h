@@ -69,14 +69,18 @@ public:
 		float TimeToWait = 0.f;
 		for (int32 i = 0; i < Subs.Num(); i++)
 		{
-			//Sleep means that we pause this thread for the given time
+			if (DialogUI)
+			{
+				//Sleep means that we pause this thread for the given time
 			//FPlatformProcess::Sleep(Subs[i].AssociatedTime);
-			FPlatformProcess::Sleep(Subs[i].AssociatedTime);
+				FPlatformProcess::Sleep(Subs[i].AssociatedTime);
 
+
+				//TimeToWait += Subs[i].AssociatedTime;
+				//Update our subtitles after the thread comes back
+				DialogUI->SubtitleToDisplay = Subs[i].Subtitle;
+			}
 			
-			//TimeToWait += Subs[i].AssociatedTime;
-			//Update our subtitles after the thread comes back
-			DialogUI->SubtitleToDisplay = Subs[i].Subtitle;
 		}
 		
 		//Sleep 1 second to let the user read the text

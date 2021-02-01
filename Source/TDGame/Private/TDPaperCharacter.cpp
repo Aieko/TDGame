@@ -19,6 +19,7 @@
 #include "TDFoe.h"
 #include "Kismet/GameplayStatics.h"
 #include "TDBase.h"
+#include "TDGame/Public/UIJournal.h"
 
 
 
@@ -593,6 +594,7 @@ void ATDPaperCharacter::SetupPlayerInputComponent(UInputComponent * PlayerInputC
 
 
 	InputComponent->BindAction("Talk", IE_Pressed, this, &ATDPaperCharacter::ToggleTalking);
+	InputComponent->BindAction("Journal", IE_Pressed, this, &ATDPaperCharacter::ToggleJournal);
 }
 
 void ATDPaperCharacter::ToggleTalking()
@@ -687,4 +689,14 @@ void ATDPaperCharacter::Talk(FString Excerpt, TArray<FSubtitle>& Subtitles)
 		}
 	}
 
+
+}
+
+void ATDPaperCharacter::ToggleJournal()
+{
+	if (!bIsTalking)
+	{
+		ToggleJournalUI();
+	}
+	
 }

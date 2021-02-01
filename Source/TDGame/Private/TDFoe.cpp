@@ -376,7 +376,7 @@ void ATDFoe::HandleTakeDamage(UTDHealthComponent * OwningHealthComp, int32 Healt
 		TargetPawn = nullptr;
 		NextPathPoint = GetActorLocation();
 		PawnSensingComp->bHearNoises = false;
-
+		PrimaryActorTick.bCanEverTick = false;
 		
 	}
 }

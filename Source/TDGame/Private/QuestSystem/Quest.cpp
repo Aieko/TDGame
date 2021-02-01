@@ -1,8 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-
-#include "TDGame/TDGame.h"
 #include "TDGame/Public/QuestSystem/Quest.h"
+#include "TDGame/TDGame.h"
 #include "TDGame/Public/QuestSystem/Objective.h"
 #include "Sound/SoundCue.h"
 #include "EngineUtils.h"
@@ -110,5 +109,5 @@ float AQuest::QuestCompletion() const
 	{
 		AggregateCompletion += Objective->GetProgress();
 	}
-	return AggregateCompletion / (float)NumObjectives;
+	return FMath::Clamp((AggregateCompletion / (float)NumObjectives),0.f, 1.f);
 }

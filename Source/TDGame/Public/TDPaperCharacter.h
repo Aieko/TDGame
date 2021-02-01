@@ -205,9 +205,6 @@ public:
 
 	//						***********DIALOG SYSTEM***********
 
-
-
-
 private:
 	/*True if the player is currently talking with any pawn*/
 	bool bIsTalking;
@@ -266,4 +263,15 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 		UDIalogUI* UI;
 
+
+	//						***********Journal***********
+	UFUNCTION(BlueprintImplementableEvent, Category = Journal)
+	void ToggleJournalUI();
+	
+	void ToggleJournal();
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	class UUIJournal* UIJournal;
+
+	
 };
