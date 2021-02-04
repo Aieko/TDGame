@@ -17,11 +17,15 @@ struct FTDQuestList : public FTableRowBase
 	GENERATED_USTRUCT_BODY()
 
 
-		UPROPERTY(EditAnywhere)
+		UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Quest")
 		FString QuestName;
 
-		UPROPERTY(EditAnywhere)
+		UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Quest")
 		TArray<TSubclassOf<AQuest>> Quests;
 
-		
+		UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Quest")
+		bool bIsComplete = false;
+
+		UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Quest")
+		bool bIsActive = false;
 };

@@ -31,7 +31,7 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
-
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "QuestComponents")
 	class AObjective* AttachedObjective;
 
 	UPROPERTY(VisibleDefaultsOnly, Category = "Components")

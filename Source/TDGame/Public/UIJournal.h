@@ -20,11 +20,14 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Quest")
 		TArray<TSubclassOf<AQuest>> Quests;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Quest")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Quest")
 		TArray<FString> ActiveQuests;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Quest")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Quest")
 		TArray<FString> CompleteQuests;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Q")
+		bool bIsComplete = false;
 
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "DialogSystem")
 		void Show();

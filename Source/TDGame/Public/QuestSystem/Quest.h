@@ -44,9 +44,11 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Q")
 		FText QuestEndDescription;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Q")
+		bool bIsActive = false;
+
 	UFUNCTION(BlueprintCallable, Category = "Q")
 		bool IsQuestComplete() const;
-
 	
 
 	UFUNCTION(BlueprintCallable, Category = "Q")

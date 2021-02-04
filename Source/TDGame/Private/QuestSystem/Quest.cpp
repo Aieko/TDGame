@@ -17,7 +17,8 @@ AQuest::AQuest() :
 void AQuest::BeginPlay()
 {
 	Super::BeginPlay();
-	FVector Location(0.0f, 0.0f, 0.0f);
+	
+	/*FVector Location(0.0f, 0.0f, 0.0f);
 	FRotator Rotation(0.0f, 0.0f, 0.0f);
 	FActorSpawnParameters SpawnInfo;
 		for (auto Objective : Objectives)
@@ -34,7 +35,7 @@ void AQuest::BeginPlay()
 					CurrentObjectives.Add(ExistObjective);
 				}
 			}
-		}
+		}*/
 	
 }
 
@@ -47,12 +48,15 @@ void AQuest::Tick(float DeltaTime)
 
 bool AQuest::IsQuestComplete() const
 {
-	bool result = true;
-	for (auto Objective : CurrentObjectives)
-	{
-		result &= Objective->IsComplete();
-	}
-	return result;
+	
+		bool result = true;
+		for (auto Objective : CurrentObjectives)
+		{
+			result &= Objective->IsComplete();
+		}
+		return result;
+	
+	
 }
 
 

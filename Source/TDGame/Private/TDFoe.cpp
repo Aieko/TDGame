@@ -120,7 +120,7 @@ void ATDFoe::BeginPlay()
 	ATDBase* EnemyBase = Cast<ATDBase>(Base);
 
 	//Setting Objective
-	FVector Location = GetActorLocation();
+	/*FVector Location = GetActorLocation();
 	FRotator Rotation(0.0f, 0.0f, 0.0f);
 	FActorSpawnParameters SpawnInfo;
 
@@ -129,7 +129,7 @@ void ATDFoe::BeginPlay()
 	if (AttachedObjective)
 	{
 		AttachedObjective->AttachToActor(this, FAttachmentTransformRules::KeepRelativeTransform);
-	}
+	}*/
 
 	//validating enemy base
 	if (EnemyBase)
@@ -369,7 +369,11 @@ void ATDFoe::HandleTakeDamage(UTDHealthComponent * OwningHealthComp, int32 Healt
 		{
 			GetController()->StopMovement();
 			SetLifeSpan(0.6f);
-			AttachedObjective->Update(1);
+			if (AttachedObjective)
+			{
+				AttachedObjective->Update(1);
+			}
+			
 			
 		}
 

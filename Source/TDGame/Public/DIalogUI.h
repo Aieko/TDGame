@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
+
 #include "TDGame/Public/DialogSystem/Dialog.h"
 #include "DIalogUI.generated.h"
 
@@ -47,6 +48,7 @@ class UMGAsyncTask : public FNonAbandonableTask
 	/*UI Reference*/
 	UDIalogUI* DialogUI;
 
+	APlayerController* PC;
 public:
 
 	//Constructor
@@ -62,31 +64,6 @@ public:
 		RETURN_QUICK_DECLARE_CYCLE_STAT(UMGAsyncTask, STATGROUP_ThreadPoolAsyncTasks);
 	}
 
-	/*This function executes each time this thread is active - UE4 searches for a function named DoWord() and executes it*/
-	void DoWork()
-	{
-		
-		float TimeToWait = 0.f;
-		for (int32 i = 0; i < Subs.Num(); i++)
-		{
-			if (DialogUI)
-			{
-				//Sleep means that we pause this thread for the given time
-			//FPlatformProcess::Sleep(Subs[i].AssociatedTime);
-				FPlatformProcess::Sleep(Subs[i].AssociatedTime);
-
-
-				//TimeToWait += Subs[i].AssociatedTime;
-				//Update our subtitles after the thread comes back
-				DialogUI->SubtitleToDisplay = Subs[i].Subtitle;
-			}
-			
-		}
-		
-		//Sleep 1 second to let the user read the text
-		//FPlatformProcess::Sleep(1.0f);
-		
-		//Clear the subtitle
-		//DialogUI->SubtitleToDisplay = FString("");
-	}
+	/*This function executes each time this thread is active - UE4 searches for a function named DoWork() and executes it*/
+	void DoWork();
 };
