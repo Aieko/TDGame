@@ -37,6 +37,8 @@ public:
 
 	int32 GetHealth();
 
+	void Heal(int32 Ammount);
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "HealthComponent")
 		int32 DefaultHealth;
 

@@ -57,6 +57,16 @@ int32 UTDHealthComponent::GetHealth()
 	return Health;
 }
 
+void UTDHealthComponent::Heal(int32 Ammount)
+{
+	if (Health < 6)
+	{
+		Health += Ammount;
+	}
+	
+	OnHealthChanged.Broadcast(this, Health, Ammount, nullptr, nullptr, nullptr);
+}
+
 // Called every frame
 void UTDHealthComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {

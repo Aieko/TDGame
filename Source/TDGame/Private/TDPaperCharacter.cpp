@@ -7,7 +7,7 @@
 #include "TDGame/Public/TDHealthComponent.h"
 #include "Components/PawnNoiseEmitterComponent.h"
 #include "PaperFlipbookComponent.h"
-#include "Components/CapsuleComponent.h"
+#include "TDGame/TDGamePlayerController.h"
 #include "Components/SphereComponent.h"
 #include "Components/InputComponent.h"
 #include "GameFramework/SpringArmComponent.h"
@@ -17,11 +17,11 @@
 #include "PaperFlipbook.h"
 #include "TimerManager.h"
 #include "TDFoe.h"
-#include "Kismet/GameplayStatics.h"
 #include "TDBase.h"
+#include "Kismet/GameplayStatics.h"
 #include "TDGame/Public/UIJournal.h"
-
-
+#include "TDGame/Public/InventorySystem/TDPickUp.h"
+#include "TDGame/Public/InventorySystem/TDInventoryComponent.h"
 
 
 ATDPaperCharacter::ATDPaperCharacter(const FObjectInitializer& PCIP)
@@ -83,6 +83,14 @@ ATDPaperCharacter::ATDPaperCharacter(const FObjectInitializer& PCIP)
 	HitBox->SetSphereRadius(12.0f, true);
 	HitBox->OnComponentBeginOverlap.AddDynamic(this, &ATDPaperCharacter::OnOverlap);
 
+	PickUpSphere = CreateDefaultSubobject<USphereComponent>(TEXT("PickUpSphere"));
+	PickUpSphere->SetupAttachment(RootComponent);
+	PickUpSphere->SetCanEverAffectNavigation(false);
+	PickUpSphere->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	PickUpSphere->SetSphereRadius(36.0f, true);
+	PickUpSphere->OnComponentBeginOverlap.AddDynamic(this, &ATDPaperCharacter::PickUpOverlap);
+	PickUpSphere->OnComponentEndOverlap.AddDynamic(this, &ATDPaperCharacter::PickUpOverlapEnd);
+
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(RootComponent);
 	CameraBoom->SetUsingAbsoluteRotation(true); // Don't want arm to rotate when character does
@@ -114,12 +122,14 @@ ATDPaperCharacter::ATDPaperCharacter(const FObjectInitializer& PCIP)
 	HealthComp->OnHealthChanged.AddDynamic(this, &ATDPaperCharacter::HandleTakeDamage);
 	HealthComp->DefaultHealth = 6;
 	//Attack Anim time
-	AttackTime = 0.5f;
+	AttackTime = 0.6f;
 	//CD of Attack
 	AttackCD = 0.3f;
 	//Creating component which make foes see main char
 	PawnNoiseEmitterComp = CreateDefaultSubobject<UPawnNoiseEmitterComponent>(TEXT("PawnNoiseEmitterComp"));
 
+	//InventoryComponent = CreateDefaultSubobject<UTDInventoryComponent>(TEXT("Inventory"));
+	//InventoryComponent->Capacity = 12;
 
 	bIsTalking = false;
 	bIsInTalkRange = false;
@@ -129,11 +139,57 @@ ATDPaperCharacter::ATDPaperCharacter(const FObjectInitializer& PCIP)
 	AudioComp->SetupAttachment(GetRootComponent());
 }
 
+void ATDPaperCharacter::PickUpOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
+	int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	
+	
+	
+
+}
+
+void ATDPaperCharacter::PickUpOverlapEnd(UPrimitiveComponent * OverlappedComp, AActor * OtherActor,
+	UPrimitiveComponent * OtherComp, int32 OtherBodyIndex)
+{
+	
+	
+}
+
+
+void ATDPaperCharacter::PickupItem()
+{
+	/*if (LastItemSeen)
+	{
+		//Find the first available slot
+	//	int32 AvailableSlot = Inventory.Find(nullptr);
+
+		if (AvailableSlot != INDEX_NONE)
+		{
+			//Add the item to the first valid slot we found
+			//Inventory[AvailableSlot] = LastItemSeen;
+			//Destroy the item from the game
+			LastItemSeen->Destroy();
+		}
+		else GLog->Log("You can't carry any more items!");
+	}*/
+}
+
+void ATDPaperCharacter::UseItem(class UTDPickUp* Item)
+{
+	if (Item)
+	{
+		Item->Use(this);
+		Item->OnUse(this); // Blueprint
+	}
+}
+
 void ATDPaperCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 	//Casting to base. It gives a reference to ignore dd to our buildings
 	Base = Cast<ATDBase>(Base);
+	LastItemSeen = nullptr;
+	
 }
 //Determining states of char
 void ATDPaperCharacter::DetermineState()
@@ -229,6 +285,7 @@ void ATDPaperCharacter::UpdateAnimation()
 		{
 			GetSprite()->SetLooping(false);
 			GetSprite()->SetFlipbook(CharacterGetHitAnimation);
+			
 		
 
 		}
@@ -246,7 +303,8 @@ void ATDPaperCharacter::UpdateAnimation()
 			//Second Combo
 				else if (bAttacking && ComboAttack == 2 && CurrentState == ECharacterState::AttackCombo2)
 			{
-				GetSprite()->SetLooping(false);
+				
+				
 				GetSprite()->SetFlipbook(CharacterAttackAnimation2);
 				GetCharacterMovement()->MaxWalkSpeed *= 0.8f;
 				MovingAction();
@@ -442,7 +500,7 @@ void ATDPaperCharacter::ResetAttack()
 	ComboAttack = 1;
 
 
-	SetCharacterState(ECharacterState::Default);
+	
 
 }
 
@@ -507,12 +565,16 @@ void ATDPaperCharacter::ResetAnimation()
 	if (bAttacking)
 	{
 		bAttacking = false;
+		
 	}
 
 	if (bIsGetHit)
 	{
 		bIsGetHit = false;
+		
 	}
+
+	DetermineState();
 }
 
 void ATDPaperCharacter::Interact()
@@ -535,26 +597,31 @@ void ATDPaperCharacter::OnOverlap(UPrimitiveComponent* OverlappedComp, AActor* O
 
 void ATDPaperCharacter::HandleTakeDamage(UTDHealthComponent * OwningHealthComp, int32 Health, int32 HealthDelta, const UDamageType * DamageType, AController * InstigatedBy, AActor * DamageCauser)
 {
-	if (Health <= 0)
-	{
-		bIsDead = true;
-		DetermineState();
-	}
+	
+	
+		if (Health <= 0)
+		{
+			bIsDead = true;
+			DetermineState();
+		}
 
-	if (MatInst == nullptr)
-	{
-		MatInst = GetSprite()->CreateAndSetMaterialInstanceDynamicFromMaterial(0, GetSprite()->GetMaterial(0));
-	}
-	if (MatInst)
 
-	{
-		MatInst->SetScalarParameterValue("LastTimeDamageTaken", GetWorld()->TimeSeconds);
-	}
+		if (MatInst == nullptr)
+		{
+			MatInst = GetSprite()->CreateAndSetMaterialInstanceDynamicFromMaterial(0, GetSprite()->GetMaterial(0));
+		}
+		if (MatInst)
 
-	StartImmortality();
-	bIsGetHit = true;
+		{
+			MatInst->SetScalarParameterValue("LastTimeDamageTaken", GetWorld()->TimeSeconds);
+		}
 
-	GetWorldTimerManager().SetTimer(TimerHandle_ResetAnimation, this, &ATDPaperCharacter::ResetAnimation, HurtTime, false);
+		StartImmortality();
+		bIsGetHit = true;
+
+		GetWorldTimerManager().SetTimer(TimerHandle_ResetAnimation, this, &ATDPaperCharacter::ResetAnimation, HurtTime, false);
+	
+	
 
 }
 
@@ -595,6 +662,14 @@ void ATDPaperCharacter::SetupPlayerInputComponent(UInputComponent * PlayerInputC
 
 	InputComponent->BindAction("Talk", IE_Pressed, this, &ATDPaperCharacter::ToggleTalking);
 	InputComponent->BindAction("Journal", IE_Pressed, this, &ATDPaperCharacter::ToggleJournal);
+
+
+	//Action mapping of pickup item
+	InputComponent->BindAction("Pickup", IE_Pressed, this, &ATDPaperCharacter::PickupItem);
+
+	InputComponent->BindAction("Inventory", IE_Pressed, this, &ATDPaperCharacter::ToggleInventory);
+
+	
 }
 
 void ATDPaperCharacter::ToggleTalking()
@@ -604,7 +679,6 @@ void ATDPaperCharacter::ToggleTalking()
 		//If we are in talk range handle the talk status and the UI
 		bIsTalking = !bIsTalking;
 		ToggleUI();
-		
 
 	}
 }
@@ -698,5 +772,14 @@ void ATDPaperCharacter::ToggleJournal()
 	{
 		ToggleJournalUI();
 	}
+	
+}
+
+void ATDPaperCharacter::ToggleInventory()
+
+{
+	
+		ToggleInventoryUI();
+	
 	
 }

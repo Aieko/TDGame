@@ -4,6 +4,7 @@
 #include "CoreMinimal.h"
 #include "TDGame/Public/DIalogUI.h"
 #include "TDGame/Public/TDIdleNPC.h"
+#include "TDGame/Public/InventorySystem/TDPickUp.h"
 #include "PaperCharacter.h"
 #include "TDPaperCharacter.generated.h"
 enum class ECharacterState
@@ -20,6 +21,7 @@ class UPaperFlipbook;
 class UTDHealthComponent;
 class UPawnNoiseEmitterComponent;
 class USphereComponent;
+class ATDGamePlayerController;
 UCLASS()
 class TDGAME_API ATDPaperCharacter : public APaperCharacter
 {
@@ -33,6 +35,7 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 		UTDHealthComponent* HealthComp;
 
+	
 	
 private:
 	//Animations
@@ -61,15 +64,25 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 		class UCameraComponent* TopDownCameraComponent;
 
+	//UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Inventory", meta = (AllowPrivateAccess = "true"))
+	//	class UTDInventoryComponent* InventoryComponent;
+
 	/** Camera boom positioning the camera above the character */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 		class USpringArmComponent* CameraBoom;
+
+	
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 	//Second collision sphere
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 		USphereComponent* HitBox;
+
+	UPROPERTY(VisibleAnywhere, Category = "Components")
+		USphereComponent* PickUpSphere;
+
 	//component which allow chracter make noises
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 		UPawnNoiseEmitterComponent* PawnNoiseEmitterComp;
@@ -274,4 +287,40 @@ protected:
 	class UUIJournal* UIJournal;
 
 	
+//					***********InventorySystem***********
+
+	
+
+private:
+	/*Raycasts in front of the character to find usable items*/
+	UFUNCTION()
+	void PickUpOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
+			int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
+	UFUNCTION()
+	void PickUpOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
+			UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+
+
+	/*Reference to the last seen pickup item. Nullptr if none*/
+	class UTDPickUp* LastItemSeen;
+
+		/*Handles the Pickup Input*/
+	UFUNCTION()
+	void PickupItem();
+
+	UFUNCTION(BlueprintCallable, Category = Items)
+	void UseItem(class UTDPickUp* Item);
+
+	void ToggleInventory();
+
+	
+		
+protected:
+
+	UFUNCTION(BlueprintImplementableEvent, Category = Inventory)
+	void ToggleInventoryUI();
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+		bool bIsInventoryOpen = false;
 };
