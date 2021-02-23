@@ -16,7 +16,7 @@ ATDIdleNPC::ATDIdleNPC()
 
 		//Init the box and audio comps
 	BoxComp = CreateDefaultSubobject<UBoxComponent>(FName("BoxComp"));
-	BoxComp->SetupAttachment(GetRootComponent());
+	RootComponent = BoxComp;
 
 	AudioComp = CreateDefaultSubobject<UAudioComponent>(FName("AudioComp"));
 	AudioComp->SetupAttachment(GetRootComponent());
@@ -51,7 +51,7 @@ void ATDIdleNPC::OnBoxOverlap(UPrimitiveComponent * HitComp, AActor * OtherActor
 			IsPlayerOverlap = true;
 			ATDPaperCharacter* Char = Cast<ATDPaperCharacter>(OtherActor);
 			Char->SetTalkRangeStatus(true);
-			Char->GeneratePlayerLines(*PlayerLines);
+			//Char->GeneratePlayerLines(*PlayerLines);
 			Char->SetAssociatedPawn(this);
 		}
 	}

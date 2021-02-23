@@ -35,7 +35,7 @@ ATDFoe::ATDFoe()
  	// Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
-	struct FConstructorStatics
+	/*struct FConstructorStatics
 	{
 		ConstructorHelpers::FObjectFinderOptional<UPaperFlipbook> FoeIdleAsset;
 		FConstructorStatics()
@@ -57,7 +57,7 @@ ATDFoe::ATDFoe()
 
 
 	static FConstructorStatics ConstructorStatics;
-	static FConstructorStatics1 ConstructorStatics1;
+	static FConstructorStatics1 ConstructorStatics1;*/
 
 
 	
@@ -78,11 +78,14 @@ ATDFoe::ATDFoe()
 	CollisionComp->SetSphereRadius(11.0f);
 	CollisionComp->SetGenerateOverlapEvents(true);
 	CollisionComp->SetCanEverAffectNavigation(false);
+	CollisionComp->SetSimulatePhysics(true);
+	CollisionComp->SetMassOverrideInKg(NAME_None, 50, true);
 	CollisionComp->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 	CollisionComp->SetCollisionResponseToAllChannels(ECR_Block);
 	CollisionComp->SetCollisionResponseToChannel(COLLISION_BASE, ECR_Overlap);
 	CollisionComp->BodyInstance.bLockXRotation = true;
 	CollisionComp->BodyInstance.bLockYRotation = true;
+	CollisionComp->BodyInstance.bLockZRotation = true;
 	CollisionComp->SetRelativeRotation(FRotator(0.000000f, 90.000000f, -90.000000f));
 	RootComponent = CollisionComp;
 	
@@ -108,7 +111,9 @@ ATDFoe::ATDFoe()
 	RequiredDistanceToTarget = 25;
 	DistanceToBreakChasing = 120;
 
-	SetReplicates(true);
+	ImpulseForce = 50.f;
+
+	bReplicates = true;
 }
 
 // Called when the game starts or when spawned
@@ -119,17 +124,6 @@ void ATDFoe::BeginPlay()
 	//casting to enemy base on level
 	ATDBase* EnemyBase = Cast<ATDBase>(Base);
 
-	//Setting Objective
-	/*FVector Location = GetActorLocation();
-	FRotator Rotation(0.0f, 0.0f, 0.0f);
-	FActorSpawnParameters SpawnInfo;
-
-	AttachedObjective = GetWorld()->SpawnActor<AObjective>(Location, Rotation, SpawnInfo);
-
-	if (AttachedObjective)
-	{
-		AttachedObjective->AttachToActor(this, FAttachmentTransformRules::KeepRelativeTransform);
-	}*/
 
 	//validating enemy base
 	if (EnemyBase)
@@ -138,7 +132,7 @@ void ATDFoe::BeginPlay()
 	}
 	//getting first path point for foe ai
 
-	ZLoc = GetActorLocation().Z;
+
 	NextPathPoint = GetNextPathPoint();
 }
 
@@ -152,6 +146,13 @@ void ATDFoe::Tick(float DeltaTime)
 	if (NextPathPoint == GetActorLocation() && !bStuck)
 	{
 		UpdateFoe();
+
+		if (!bIsChilling)
+		{
+			WalkingAround();
+		}
+		
+			
 	}
 	else
 	{
@@ -160,12 +161,20 @@ void ATDFoe::Tick(float DeltaTime)
 		{
 			float DistanceToTarget = (GetActorLocation() - NextPathPoint).Size();
 
-			//checking distance between foe and target
-
+			//checking distance between foe and his target
 			if (DistanceToTarget <= RequiredDistanceToTarget)
 			{
+				
+				if (!bIsChilling)
+				{
+					ResetChilling();
 				//if we close to target then get next path point
-				NextPathPoint = GetNextPathPoint();
+					NextPathPoint = GetNextPathPoint();
+				}
+				else
+				{
+					NextPathPoint = GetActorLocation();
+				}
 
 				if (DebugTDFoePathDrawing)
 				{
@@ -187,6 +196,15 @@ void ATDFoe::Tick(float DeltaTime)
 				//Keep moving toward next target
 				UAIBlueprintHelperLibrary::SimpleMoveToLocation(GetController(), NextPathPoint);
 
+				if (GetActorLocation().Y <= NextPathPoint.Y)
+				{
+					bIsTurned = false;
+				}
+				else
+				{
+					bIsTurned = true;
+				}
+
 			}
 			if (DebugTDFoePathDrawing)
 			{
@@ -199,10 +217,17 @@ void ATDFoe::Tick(float DeltaTime)
 		}
 
 	}
-		// calculating distance to the next path point
 		
 
 	
+}
+
+void ATDFoe::ResetChilling()
+{
+	bIsChilling = !bIsChilling;
+	
+	GetWorldTimerManager().SetTimer(TimerHandle_FoeChilling, this, &ATDFoe::ResetChilling, rand() % 20 + 5, false);
+
 }
 
 void ATDFoe::UpdateAnimation()
@@ -246,7 +271,7 @@ void ATDFoe::UpdateFoe()
 
 FVector ATDFoe::GetNextPathPoint()
 {
-	AActor* BestTarget = nullptr;
+	//AActor* BestTarget = nullptr;
 
 	ATDBase* EnemyBase = Cast<ATDBase>(Base);
 
@@ -258,17 +283,18 @@ FVector ATDFoe::GetNextPathPoint()
 		NextPathPoint = TargetPawn->GetActorLocation();
 		UAIBlueprintHelperLibrary::SimpleMoveToLocation(GetController(), NextPathPoint);
 		float Distance = (TargetPawn->GetActorLocation() - GetActorLocation()).Size();
+		//if distance to target more than distancetobreakchasing
 		if (Distance >= DistanceToBreakChasing)
 		{
-			TargetPawn = nullptr;
+			TargetPawn = nullptr; //clear reference
 			bIsSeenPawn = false;
+			//trying to find base, if not than just standing
 			if (EnemyBase)
 			{
 				NextPathPoint = GetNextPathPoint();
 			}
 			else
 			{
-				UpdateFoe();
 				return GetActorLocation();
 			}
 		}
@@ -290,16 +316,15 @@ FVector ATDFoe::GetNextPathPoint()
 		float Distance = (EnemyBase->GetActorLocation() - GetActorLocation()).Size();
 		if (Distance < NearestTargetDistance)
 		{
-			BestTarget = EnemyBase;
 
 			NearestTargetDistance = Distance;
 
 		}
 	}
-	// if we have BestTarget then trying to find path to BestTarget
-	if (BestTarget)
+	// if EnemyBase is Valid then trying to find path to it
+	if (EnemyBase)
 	{
-		NextPathPoint = BestTarget->GetActorLocation();
+		NextPathPoint = EnemyBase->GetActorLocation();
 		
 		UNavigationPath* NavPath = UNavigationSystemV1::FindPathToLocationSynchronously(this, GetActorLocation(), NextPathPoint);
 		
@@ -336,19 +361,18 @@ void ATDFoe::RefreshPath()
 void ATDFoe::HandleTakeDamage(UTDHealthComponent * OwningHealthComp, int32 Health, int32 HealthDelta, const UDamageType * DamageType, AController * InstigatedBy, AActor * DamageCauser)
 {
 	//Pushing while handling damage
-	//@ todo foes are jumping on over foes when get hit cuz of collision, so it's need to be fix
-	FVector ImpulseDirection = GetActorLocation();
-	if (bIsTurned)
+	FVector ImpulseDirection = CollisionComp->GetForwardVector();
+	if (!bIsTurned)
 	{
-		
-		ImpulseDirection.Y += 30;
-	}
-	else
-	{
-		ImpulseDirection.Y -= 30;
+		ImpulseForce = -ImpulseForce;
 	}
 	
-	CollisionComp->SetRelativeLocation(ImpulseDirection);
+	CollisionComp->AddImpulse(ImpulseDirection * CollisionComp->GetMass() * ImpulseForce);
+
+	if (ImpulseForce < 0)
+	{
+		ImpulseForce = -ImpulseForce;
+	}
 	
 
 	//Visual part of handle damage
@@ -388,10 +412,11 @@ void ATDFoe::HandleTakeDamage(UTDHealthComponent * OwningHealthComp, int32 Healt
 //Determining states
 void ATDFoe::DetermineFoeState()
 {
-	EFoeState NewState = EFoeState::MovingToBase;
+	EFoeState NewState = EFoeState::Default;
 
+	
 
-	if (bStuck && !bIsSeenPawn)
+	if (bStuck && !bIsSeenPawn && !bIsChilling)
 	{
 		NewState = EFoeState::Stucking;
 	}
@@ -412,13 +437,16 @@ void ATDFoe::Stucking()
 	float DistanceToTarget = (GetActorLocation() - ReachablePoint).Size();
 	if(DistanceToTarget <= RequiredDistanceToTarget)
 	{
-		NextPathPoint = GetNextPathPoint();
 		bStuck = false;
 	}
-	else
-	{
-		UAIBlueprintHelperLibrary::SimpleMoveToLocation(GetController(), ReachablePoint);
-	}
+	
+}
+
+void ATDFoe::WalkingAround()
+{
+	FVector ReachablePoint = UNavigationSystemV1::GetRandomPointInNavigableRadius(GetWorld(), GetActorLocation()-FVector(25.f,25.f,25.f), 100);
+	NextPathPoint = ReachablePoint;
+
 }
 
 //@todo need to implement all that attack mechanic
@@ -440,7 +468,7 @@ void ATDFoe::SetFoeState(EFoeState NewState)
 	{
 		Stucking();
 	}
-	if (PrevState == EFoeState::MovingToBase && NewState == EFoeState::Attacking)
+	if (PrevState == EFoeState::Default && NewState == EFoeState::Attacking)
 	{
 		Attacking();
 	}
@@ -451,6 +479,7 @@ void ATDFoe::SetFoeState(EFoeState NewState)
 //Cheking is where a player around
 void ATDFoe::OnNoiseHeard(APawn * NoiseInstigator, const FVector & Location, float Volume)
 {
+	
 	if (DebugTDFoePathDrawing)
 	{
 		DrawDebugSphere(GetWorld(), Location, 32.0f, 12, FColor::Red, false, 10.0f);
@@ -473,8 +502,6 @@ void ATDFoe::OnNoiseHeard(APawn * NoiseInstigator, const FVector & Location, flo
 	}
 
 	
-	FVector InputLocation = GetActorLocation();
-	float InputYLocation = InputLocation.Y;
 	
 	bIsSeenPawn = true;
 	TargetPawn = NoiseInstigator;

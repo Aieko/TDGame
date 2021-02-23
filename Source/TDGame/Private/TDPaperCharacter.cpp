@@ -22,6 +22,7 @@
 #include "TDGame/Public/UIJournal.h"
 #include "TDGame/Public/InventorySystem/TDPickUp.h"
 #include "TDGame/Public/InventorySystem/TDInventoryComponent.h"
+#include "NPC/TDProjectile.h"
 
 
 ATDPaperCharacter::ATDPaperCharacter(const FObjectInitializer& PCIP)
@@ -32,7 +33,7 @@ ATDPaperCharacter::ATDPaperCharacter(const FObjectInitializer& PCIP)
 	{
 		ConstructorHelpers::FObjectFinderOptional<UPaperFlipbook> CharacterIdleAsset;
 		FConstructorStatics()
-			: CharacterIdleAsset(TEXT("PaperFlipbook'/Game/TDCharacter/PNG/Adventurer/Idle/Idle.Idle'"))
+			: CharacterIdleAsset(TEXT("PaperFlipbook'/Game/TDCharacter/PNG/KnightCharacter/Idle/HeroKnight_Idle.HeroKnight_Idle'"))
 		{
 
 		}
@@ -42,7 +43,7 @@ ATDPaperCharacter::ATDPaperCharacter(const FObjectInitializer& PCIP)
 	{
 		ConstructorHelpers::FObjectFinderOptional<UPaperFlipbook> CharacterWalkAsset;
 		FConstructorStatics1()
-			: CharacterWalkAsset(TEXT("PaperFlipbook'/Game/TDCharacter/PNG/Adventurer/Walk/Adventurer_Sprite_Sheet_v1_1.Adventurer_Sprite_Sheet_v1_1'"))
+			: CharacterWalkAsset(TEXT("PaperFlipbook'/Game/TDCharacter/PNG/KnightCharacter/Run/HeroKnight_Run.HeroKnight_Run'"))
 		{
 
 		}
@@ -52,7 +53,7 @@ ATDPaperCharacter::ATDPaperCharacter(const FObjectInitializer& PCIP)
 	{
 		ConstructorHelpers::FObjectFinderOptional<UPaperFlipbook> CharacterAttackAsset1;
 		FConstructorStatics2()
-			: CharacterAttackAsset1(TEXT("PaperFlipbook'/Game/TDCharacter/PNG/Adventurer/Attack_2/Adventurer_Attack2_v1_1.Adventurer_Attack2_v1_1'"))
+			: CharacterAttackAsset1(TEXT("PaperFlipbook'/Game/TDCharacter/PNG/KnightCharacter/Attack1/HeroKnight_Attack1.HeroKnight_Attack1'"))
 		{
 
 		}
@@ -72,8 +73,11 @@ ATDPaperCharacter::ATDPaperCharacter(const FObjectInitializer& PCIP)
 	CharacterWalkAnimation = ConstructorStatics1.CharacterWalkAsset.Get();
 	CharacterAttackAnimation1 = ConstructorStatics2.CharacterAttackAsset1.Get();
 	
+	
 	GetSprite()->SetRelativeLocation(FVector(0.0f, 0.0f, 5.0f));
 	GetSprite()->SetCanEverAffectNavigation(false);
+	GetSprite()->SetLooping(true);
+	
 
 	//Creating HitBox with settings
 	HitBox = CreateDefaultSubobject<USphereComponent>(TEXT("HitBox"));
@@ -121,8 +125,7 @@ ATDPaperCharacter::ATDPaperCharacter(const FObjectInitializer& PCIP)
 	HealthComp = CreateDefaultSubobject<UTDHealthComponent>(TEXT("HealthComp"));
 	HealthComp->OnHealthChanged.AddDynamic(this, &ATDPaperCharacter::HandleTakeDamage);
 	HealthComp->DefaultHealth = 6;
-	//Attack Anim time
-	AttackTime = 0.6f;
+
 	//CD of Attack
 	AttackCD = 0.3f;
 	//Creating component which make foes see main char
@@ -189,8 +192,20 @@ void ATDPaperCharacter::BeginPlay()
 	//Casting to base. It gives a reference to ignore dd to our buildings
 	Base = Cast<ATDBase>(Base);
 	LastItemSeen = nullptr;
+
+	CurrentHealth = HealthComp->GetHealth();
+	
+	//GetSprite()->OnFinishedPlaying.AddDynamic(this, &ATDPaperCharacter::UpdateAnimation);
+	
 	
 }
+
+void ATDPaperCharacter::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+	UpdateCharacter();
+}
+
 //Determining states of char
 void ATDPaperCharacter::DetermineState()
 {
@@ -202,14 +217,7 @@ void ATDPaperCharacter::DetermineState()
 	}
 	else
 	{
-		if (!bAttacking && !bIsDashing)
-		{
-			NewState = ECharacterState::Default;
-		}
-		else if (!bAttacking && !bIsDashing && bCanInteract)
-		{
-			NewState = ECharacterState::Interact;
-		}
+		
 		if (bAttacking && ComboAttack == 1)
 		{
 			NewState = ECharacterState::AttackCombo1;
@@ -224,6 +232,17 @@ void ATDPaperCharacter::DetermineState()
 			NewState = ECharacterState::Dashing;
 		}
 
+		if (bIsBlocking)
+		{
+			NewState = ECharacterState::Blocking;
+		}
+
+		if (bIsGetHit)
+		{
+			NewState = ECharacterState::Hurt;
+		}
+
+		
 
 	}
 	
@@ -248,16 +267,33 @@ void ATDPaperCharacter::SetCharacterState(ECharacterState NewState)
 	{
 		Interact();
 	}
+
+	if (NewState == ECharacterState::Default)
+	{
+		this->CanMove = true;
+		bCanBlock = true;
+	}
 	
 	if (NewState == ECharacterState::Dashing)
 	{
 		bCanAttack = false;
 	}
-	
+
+	if (NewState == ECharacterState::Blocking)
+	{
+		this->CanMove = false;
+		this->SetCanBeDamaged(false);
+
+		
+	}
+
 }
 //Main Animation State Machine
 void ATDPaperCharacter::UpdateAnimation()
 {
+	const FVector PlayerVelocity = GetVelocity();
+	const float PlayerSpeedSqr = PlayerVelocity.SizeSquared();
+	
 	if (!bIsDead)
 	{
 		//Setting Direction of sprite
@@ -266,70 +302,95 @@ void ATDPaperCharacter::UpdateAnimation()
 			GetSprite()->SetRelativeRotation(FRotator(0.0f, 0.0f, 0.0f));
 
 		}
-			else
-			{
-				GetSprite()->SetRelativeRotation(FRotator(0.0f, 180.0f, 0.0f));
-
-			}
-	//Checking if dashing first
-	if (bIsDashing)
-	{
-		
-		GetSprite()->SetFlipbook(CharacterDashAnimation);
-		GetCharacterMovement()->MaxWalkSpeed *= 1.06f;
-		//to move char when dashing
-		MovingAction();
-	}
-	//checking if char gets hurt
-		else if (bIsGetHit)
+		else
 		{
-			GetSprite()->SetLooping(false);
-			GetSprite()->SetFlipbook(CharacterGetHitAnimation);
+			GetSprite()->SetRelativeRotation(FRotator(0.0f, 180.0f, 0.0f));
+
+		}
+		//Checking if dashing first
+		if (CurrentState == ECharacterState::Dashing)
+		{
+
+			GetSprite()->SetFlipbook(CharacterDashAnimation);
+			GetCharacterMovement()->MaxWalkSpeed *= 1.06f;
 			
-		
-
-		}
-		//If char don't hurt and not dashing then char can attack
-			else if (bAttacking && ComboAttack == 1 && CurrentState == ECharacterState::AttackCombo1)
-		{
-			GetSprite()->SetLooping(false);
-			GetSprite()->SetFlipbook(CharacterAttackAnimation1);
-			//Change speed walk to be more slow
-			GetCharacterMovement()->MaxWalkSpeed *= 0.8f;
-			//to move char when attacking
+			
+			//to move char when dashing
 			MovingAction();
-
 		}
-			//Second Combo
-				else if (bAttacking && ComboAttack == 2 && CurrentState == ECharacterState::AttackCombo2)
-			{
-				
-				
-				GetSprite()->SetFlipbook(CharacterAttackAnimation2);
-				GetCharacterMovement()->MaxWalkSpeed *= 0.8f;
-				MovingAction();
-			}
-				//If we don't do anything above then just play walk or idle animation 
-					else
-						{
-							const FVector PlayerVelocity = GetVelocity();
-							const float PlayerSpeedSqr = PlayerVelocity.SizeSquared();
-							// Are we moving or standing still?
-							UPaperFlipbook* DesiredAnimation = (PlayerSpeedSqr > 0.0f) ? CharacterWalkAnimation : CharacterIdleAnimation;
 
-							GetSprite()->SetLooping(true);
-							//Normalize walk speed
-							if (GetCharacterMovement()->MaxWalkSpeed != CharOrigMovementSpeed)
-							{
-								GetCharacterMovement()->MaxWalkSpeed = CharOrigMovementSpeed;
-							}
-							//Setting idle or walking animation
-							if (GetSprite()->GetFlipbook() != DesiredAnimation)
-							{
+			else if (CurrentState == ECharacterState::Blocking && !bIsBlocked)
+			{
+				GetSprite()->SetFlipbook(CharacterBlockAnimation);
+			}
+			else if(bIsBlocked)
+				{
+				GetSprite()->SetFlipbook(CharacterBlockedAnimation);
+				}
+				//checking if char gets hurt
+				else if (CurrentState == ECharacterState::Hurt)
+				{
+					
+					GetSprite()->SetFlipbook(CharacterGetHitAnimation);
+					if (GetSprite()->IsLooping())
+					{
+						//GetSprite()->SetLooping(false);
+					}
+
+				}
+					//If char don't hurt and not dashing then char can attack
+					else if (bAttacking && ComboAttack == 1 && CurrentState == ECharacterState::AttackCombo1)
+					{
+						
+						GetSprite()->SetFlipbook(CharacterAttackAnimation1);
+						//Change speed walk to be slow
+						GetCharacterMovement()->MaxWalkSpeed *= 0.8f;
+						//to move char when attacking
+						MovingAction();
+
+					}
+					//Second Combo
+					else if (bAttacking && ComboAttack == 2 && CurrentState == ECharacterState::AttackCombo2)
+					{
+
 							
-								GetSprite()->SetFlipbook(DesiredAnimation);
-							}
+						GetSprite()->SetFlipbook(CharacterAttackAnimation2);
+						GetCharacterMovement()->MaxWalkSpeed *= 0.8f;
+						MovingAction();
+					}
+						//If we don't do anything above then just play walk or idle animation 
+						else if((PlayerSpeedSqr > 0.0f) && CurrentState == ECharacterState::Default)
+						{
+								if (!GetSprite()->IsLooping())
+								{
+									GetSprite()->SetLooping(true);
+								}
+
+								GetSprite()->SetFlipbook(CharacterWalkAnimation);
+					
+								//Normalize walk speed
+								if (GetCharacterMovement()->MaxWalkSpeed != CharOrigMovementSpeed)
+								{
+									GetCharacterMovement()->MaxWalkSpeed = CharOrigMovementSpeed;
+								}
+
 						}
+							else if(CurrentState == ECharacterState::Default)
+								{
+									if (!GetSprite()->IsLooping())
+									{
+										GetSprite()->SetLooping(true);
+									}
+
+									GetSprite()->SetFlipbook(CharacterIdleAnimation);
+
+									//Normalize walk speed
+									if (GetCharacterMovement()->MaxWalkSpeed != CharOrigMovementSpeed)
+									{
+										GetCharacterMovement()->MaxWalkSpeed = CharOrigMovementSpeed;
+									}
+
+								}
 	}
 	//if char is dead then play death animation
 	else
@@ -350,13 +411,10 @@ void ATDPaperCharacter::UpdateCharacter()
 //Move forward input
 void ATDPaperCharacter::MoveForward(float Value)
 {
-	if ((Controller) && (Value != 0.0f) && !bIsTalking && CanMove)
+	if ((Controller) && (Value != 0.0f) && !bIsTalking && CanMove && !bIsDashing)
 	{
-		bool IsLooping = GetSprite()->IsLooping();
-		if (!IsLooping)
-		{
-			GetSprite()->SetLooping(true);
-		}
+		
+		
 		FRotator ControlRot = GetControlRotation();
 		ControlRot.Pitch = 0.0f;
 		ControlRot.Roll = 0.0f;
@@ -373,13 +431,10 @@ void ATDPaperCharacter::MoveForward(float Value)
 //Move sideways input
 void ATDPaperCharacter::MoveRight(float Value)
 {
-	if ((Controller) && (Value != 0.0f) && !bIsTalking && CanMove)
+	if ((Controller) && (Value != 0.0f) && !bIsTalking && CanMove && !bIsDashing)
 	{
-		bool IsLooping = GetSprite()->IsLooping();
-		if (!IsLooping)
-		{
-			GetSprite()->SetLooping(true);
-		}
+		
+		
 
 		FRotator ControlRot = GetControlRotation();
 		ControlRot.Pitch = 0.0f;
@@ -409,7 +464,7 @@ void ATDPaperCharacter::MoveRight(float Value)
 //Attacking function
 void ATDPaperCharacter::StartAttack()
 {
-	if (!bIsTalking)
+	if (!bIsTalking&&!bIsBlocking)
 	{
 		//Setting ignored objects
 		TArray<AActor*> IgnoredActors;
@@ -439,16 +494,20 @@ void ATDPaperCharacter::StartAttack()
 			UGameplayStatics::ApplyRadialDamage(this, int32(1), CharAttackHitBox, 30.0f, nullptr, IgnoredActors, this, GetInstigatorController(), true);
 
 			bCanAttack = false;
+			
+			bCanBlock = false;
 
-			GetWorldTimerManager().SetTimer(TimerHandle_AttackCD, this, &ATDPaperCharacter::ContinueAttack, AttackCD, false);
+			GetWorldTimerManager().SetTimer(TimerHandle_AttackCD, this, &ATDPaperCharacter::ContinueAttack,
+				float((CharacterAttackAnimation1->GetNumFrames()-3) / CharacterAttackAnimation1->GetFramesPerSecond()), false);
 
 			GetWorldTimerManager().SetTimer(TimerHandle_AttackReset, this, &ATDPaperCharacter::ResetAttack, 1.2f, false);
 
 			bAttacking = true;
 
-			GetWorldTimerManager().SetTimer(TimerHandle_AttackAnimationTime, this, &ATDPaperCharacter::ResetAnimation, AttackTime, false);
+			GetWorldTimerManager().SetTimer(TimerHandle_AttackAnimationTime, this, &ATDPaperCharacter::ResetAnimation,
+				float((CharacterAttackAnimation1->GetNumFrames()-1)/CharacterAttackAnimation1->GetFramesPerSecond()), false);
 
-
+			float AnimationDuration = CharacterAttackAnimation1->GetNumFrames() / CharacterAttackAnimation1->GetFramesPerSecond();
 			DetermineState();
 
 		}
@@ -457,12 +516,15 @@ void ATDPaperCharacter::StartAttack()
 			UGameplayStatics::ApplyRadialDamage(this, int32(1), CharAttackHitBox, 30.0f, nullptr, IgnoredActors, this, GetInstigatorController(), true);
 
 			bCanAttack = false;
+		
+			bCanBlock = false;
 
 			GetWorldTimerManager().SetTimer(TimerHandle_AttackReset, this, &ATDPaperCharacter::ResetAttack, 0.5f, false);
 
 			bAttacking = true;
 
-			GetWorldTimerManager().SetTimer(TimerHandle_AttackAnimationTime, this, &ATDPaperCharacter::ResetAnimation, AttackTime, false);
+			GetWorldTimerManager().SetTimer(TimerHandle_AttackAnimationTime, this, &ATDPaperCharacter::ResetAnimation,
+				float((CharacterAttackAnimation2->GetNumFrames() - 1) / CharacterAttackAnimation2->GetFramesPerSecond()), false);
 
 
 			DetermineState();
@@ -472,6 +534,29 @@ void ATDPaperCharacter::StartAttack()
 	
 
 }
+
+void ATDPaperCharacter::StartBlock()
+{
+	if (bCanBlock)
+	{
+		bIsBlocking = true;
+		
+	}
+
+	DetermineState();
+	
+}
+
+void ATDPaperCharacter::StopBlock()
+{
+	this->CanMove = true;
+	this->SetCanBeDamaged(true);
+	bIsBlocking = false;
+	bCanAttack = true;
+
+	DetermineState();
+}
+
 
 void ATDPaperCharacter::MovingAction()
 {
@@ -496,11 +581,9 @@ void ATDPaperCharacter::ResetAttack()
 {
 
 	bCanAttack = true;
-	bAttacking = false;
-	ComboAttack = 1;
-
-
 	
+	bCanBlock = true;
+	ComboAttack = 1;
 
 }
 
@@ -510,6 +593,8 @@ void ATDPaperCharacter::ContinueAttack()
 {
 
 	bCanAttack = true;
+	
+	bCanBlock = true;
 	ComboAttack += 1;
 	GetWorldTimerManager().SetTimer(TimerHandle_AttackReset, this, &ATDPaperCharacter::ResetAttack, 1.2f - AttackCD, false);
 }
@@ -527,12 +612,15 @@ void ATDPaperCharacter::Dash()
 		GetCapsuleComponent()->SetCollisionResponseToChannel(ECollisionChannel::ECC_WorldDynamic, ECollisionResponse::ECR_Ignore);
 
 		bCanAttack = false;
-		
+		bAttacking = false;
+		bCanBlock = false;
+
 		APlayerController* PlayerController = GetWorld()->GetFirstPlayerController();
 		DisableInput(PlayerController);
 		
 
-		GetWorldTimerManager().SetTimer(TimerHandle_DashResetAnimation, this, &ATDPaperCharacter::ResetAnimation, 0.3f, false);
+		GetWorldTimerManager().SetTimer(TimerHandle_DashResetAnimation, this, &ATDPaperCharacter::ResetAnimation,
+			0.3f, false);
 
 		bCanDash = false;
 
@@ -559,19 +647,28 @@ void ATDPaperCharacter::ResetAnimation()
 		bIsDashing = false;
 		GetCapsuleComponent()->SetCollisionResponseToChannel(ECollisionChannel::ECC_WorldDynamic, ECollisionResponse::ECR_Block);
 		bCanAttack = true;
+		bCanBlock = true;
 		APlayerController* PlayerController = GetWorld()->GetFirstPlayerController();
 		EnableInput(PlayerController);
 	}
 	if (bAttacking)
 	{
 		bAttacking = false;
+
+		UE_LOG(LogTemp, Warning, TEXT("Bool value is: %s"), bAttacking ? TEXT("true") : TEXT("false"));
 		
 	}
 
 	if (bIsGetHit)
 	{
-		bIsGetHit = false;
-		
+		bIsGetHit = false;	
+		bCanAttack = true;
+		bCanBlock = true;
+	}
+
+	if (bIsBlocked)
+	{
+		bIsBlocked = false;
 	}
 
 	DetermineState();
@@ -588,17 +685,25 @@ void ATDPaperCharacter::Interact()
 void ATDPaperCharacter::OnOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
 	int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	ATDFoe* EnemyPawn = Cast<ATDFoe>(OtherActor);
-	if (OtherActor)
+	ATDProjectile* Projectile = Cast<ATDProjectile>(OtherActor);
+	if (OtherActor&&bIsBlocking&&!bIsBlocked)
 	{
-		
+		bIsBlocked = true;
+
+		GetWorldTimerManager().SetTimer(TimerHandle_AttackAnimationTime, this, &ATDPaperCharacter::ResetAnimation,
+			float((CharacterBlockedAnimation->GetNumFrames() - 1) / CharacterBlockedAnimation->GetFramesPerSecond()), false);
 	}
 }
 
 void ATDPaperCharacter::HandleTakeDamage(UTDHealthComponent * OwningHealthComp, int32 Health, int32 HealthDelta, const UDamageType * DamageType, AController * InstigatedBy, AActor * DamageCauser)
 {
 	
-	
+	if (CurrentHealth < Health || CurrentHealth == Health)
+	{
+		CurrentHealth = Health;
+	}
+	else
+	{
 		if (Health <= 0)
 		{
 			bIsDead = true;
@@ -618,10 +723,18 @@ void ATDPaperCharacter::HandleTakeDamage(UTDHealthComponent * OwningHealthComp, 
 
 		StartImmortality();
 		bIsGetHit = true;
+		bCanAttack = false;
+		
+		bCanBlock = false;
 
-		GetWorldTimerManager().SetTimer(TimerHandle_ResetAnimation, this, &ATDPaperCharacter::ResetAnimation, HurtTime, false);
-	
-	
+		GetWorldTimerManager().SetTimer(TimerHandle_ResetAnimation, this, &ATDPaperCharacter::ResetAnimation,
+			CharacterGetHitAnimation->GetTotalDuration() - 0.1f, false);
+
+		CurrentHealth = Health;
+
+		DetermineState();
+	}
+		
 
 }
 
@@ -643,11 +756,7 @@ void ATDPaperCharacter::ResetImmortality()
 	bIsImmortal = false;	
 
 }
-void ATDPaperCharacter::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-	UpdateCharacter();
-}
+
 
 void ATDPaperCharacter::SetupPlayerInputComponent(UInputComponent * PlayerInputComponent)
 {
@@ -669,6 +778,9 @@ void ATDPaperCharacter::SetupPlayerInputComponent(UInputComponent * PlayerInputC
 
 	InputComponent->BindAction("Inventory", IE_Pressed, this, &ATDPaperCharacter::ToggleInventory);
 
+	InputComponent->BindAction("Block", IE_Pressed, this, &ATDPaperCharacter::StartBlock);
+	InputComponent->BindAction("Block", IE_Released, this, &ATDPaperCharacter::StopBlock);
+
 	
 }
 
@@ -677,7 +789,7 @@ void ATDPaperCharacter::ToggleTalking()
 	if (bIsInTalkRange)
 	{
 		//If we are in talk range handle the talk status and the UI
-		bIsTalking = !bIsTalking;
+		
 		ToggleUI();
 
 	}

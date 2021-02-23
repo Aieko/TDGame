@@ -18,24 +18,7 @@ void AQuest::BeginPlay()
 {
 	Super::BeginPlay();
 	
-	/*FVector Location(0.0f, 0.0f, 0.0f);
-	FRotator Rotation(0.0f, 0.0f, 0.0f);
-	FActorSpawnParameters SpawnInfo;
-		for (auto Objective : Objectives)
-		{
-
-			//CurrentObjectives.Add(GetWorld()->SpawnActor<AObjective>(Location,Rotation, SpawnInfo));
-
-			//TActorIterator<AObjective> ExistObjectives(GetWorld(), AObjective::StaticClass());
-			for (TActorIterator<AObjective> It(GetWorld(), AObjective::StaticClass()); It; ++It)
-			{
-				AObjective* ExistObjective = *It;
-				if (ExistObjective)
-				{
-					CurrentObjectives.Add(ExistObjective);
-				}
-			}
-		}*/
+	
 	
 }
 
@@ -50,9 +33,15 @@ bool AQuest::IsQuestComplete() const
 {
 	
 		bool result = true;
-		for (auto Objective : CurrentObjectives)
+		for (auto Obj : CurrentObjectives)
 		{
-			result &= Objective->IsComplete();
+			if (!Obj)
+			{
+				UE_LOG(LogTemp, Warning, TEXT("Objective is invalid"));
+				return false;
+			}
+			
+			result &= Obj->IsComplete();
 		}
 		return result;
 	
@@ -67,6 +56,12 @@ void AQuest::Update(FName Objective, int32 Progress)
 	{
 		if (Obj->ObjectiveName == Objective)
 		{
+			if (!Obj)
+			{
+				UE_LOG(LogTemp, Warning, TEXT("Objective is invalid"));
+				return;
+			}
+
 			Obj->Update(Progress);
 			return;
 		}
@@ -87,8 +82,16 @@ bool AQuest::CanUpdate(FName Objective)
 	bool PreviousIsComplete = true;
 	for (auto Obj : CurrentObjectives)
 	{
+		if (!Obj)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Objective is invalid"));
+			return false;
+		}
+
 		if (PreviousIsComplete)
 		{
+			
+
 			if (Objective == Obj->ObjectiveName)
 				return true;
 			else
@@ -109,9 +112,16 @@ float AQuest::QuestCompletion() const
 	if (NumObjectives == 0) return 1.0f;
 
 	float AggregateCompletion = 0.0f;
-	for (auto Objective : CurrentObjectives)
+	for (auto Obj : CurrentObjectives)
 	{
-		AggregateCompletion += Objective->GetProgress();
+
+		if (!Obj)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Objective is invalid"));
+			return false;
+		}
+
+		AggregateCompletion += Obj->GetProgress();
 	}
 	return FMath::Clamp((AggregateCompletion / (float)NumObjectives),0.f, 1.f);
 }

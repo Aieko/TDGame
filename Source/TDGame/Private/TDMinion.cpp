@@ -11,7 +11,7 @@
 ATDMinion::ATDMinion()
 {
 	HealthComp->DefaultHealth = 2;
-
+	
 	
 
 }

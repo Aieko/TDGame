@@ -5,9 +5,10 @@
 #include "TDFoe.generated.h"
 enum class EFoeState
 {
-	MovingToBase,
+	Default,
 	Stucking,
-	Attacking
+	Attacking,
+	Chilling
 };
 class UFloatingPawnMovement;
 class UPawnSensingComponent;
@@ -84,9 +85,13 @@ protected:
 
 	void Stucking();
 
-	void Attacking();
+	void WalkingAround();
+
+	virtual void Attacking();
 
 	void DetermineFoeState();
+
+	void ResetChilling();
 
 	EFoeState CurrentState;
 
@@ -96,13 +101,18 @@ protected:
 
 	bool bReturnToPath = false;
 
+	bool bIsChilling = false;
+
 	bool bStuck = false;
 
-	float ZLoc;
+	bool bCanAttack = true;
 
 	FTimerHandle TimerHandle_RefreshPath;
 
+	FTimerHandle TimerHandle_FoeChilling;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Foe")
+		float ImpulseForce;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Foe")
 		float RequiredDistanceToTarget;
@@ -114,10 +124,10 @@ protected:
 	//						******PAWN SENSING******
 
 	UFUNCTION()
-	void OnNoiseHeard(APawn* NoiseInstigator, const FVector& Location, float Volume);
+	virtual void OnNoiseHeard(APawn* NoiseInstigator, const FVector& Location, float Volume);
 
 	FRotator OriginalRotation;
-	//				  ******HANDLE DAMAGE & MAKE DAMAGE******
+	//				  ******HANDLE DAMAGE & DOING DAMAGE******
 	UFUNCTION()
 	void HandleTakeDamage(UTDHealthComponent* OwningHealthComp, int32 Health, int32 HealthDelta, const class UDamageType* DamageType,
 		class AController* InstigatedBy, AActor* DamageCauser);

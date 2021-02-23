@@ -32,8 +32,14 @@ void UTDHealthComponent::BeginPlay()
 
 void UTDHealthComponent::OnRep_Health(int32 OldHealth)
 {
-	int32 Damage = Health - OldHealth;
-	OnHealthChanged.Broadcast(this, Health, Damage, nullptr, nullptr, nullptr);
+	
+	if (GetOwner()->CanBeDamaged())
+	{
+		int32 Damage = Health - OldHealth;
+		OnHealthChanged.Broadcast(this, Health, Damage, nullptr, nullptr, nullptr);
+	}
+	
+	
 }
 
 void UTDHealthComponent::HandleTakeAnyDamage(AActor * DamagedActor, float Damage, const UDamageType * DamageType, AController * InstigatedBy, AActor * DamageCauser)

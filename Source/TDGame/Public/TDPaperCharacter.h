@@ -14,6 +14,8 @@ enum class ECharacterState
 	AttackCombo1,
 	AttackCombo2,
 	Dashing,
+	Hurt,
+	Blocking,
 	Dead
 };
 class UPaperFlipbookComponent;
@@ -60,6 +62,13 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Animations")
 		UPaperFlipbook* CharacterDeathAnimation;
 
+	UPROPERTY(EditAnywhere, Category = "Animations")
+		UPaperFlipbook* CharacterBlockAnimation;
+
+	UPROPERTY(EditAnywhere, Category = "Animations")
+		UPaperFlipbook* CharacterBlockedAnimation;
+
+
 	/** Top down camera */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 		class UCameraComponent* TopDownCameraComponent;
@@ -91,11 +100,12 @@ protected:
 
 	ECharacterState CurrentState;
 
-	
+	int32 CurrentHealth;
 
 	void SetCharacterState(ECharacterState NewState);
 
 	/** Called to choose the correct animation to play based on the character's movement state */
+	UFUNCTION()
 	void UpdateAnimation();
 
 	UFUNCTION()
@@ -119,6 +129,18 @@ protected:
 	void StartAttack();
 
 	UFUNCTION()
+	void StartBlock();
+
+	UFUNCTION()
+	void StopBlock();
+
+	bool bIsBlocking = false;
+
+	bool bIsBlocked = false;
+
+	bool bCanBlock = true;
+
+	UFUNCTION()
 	void ResetAttack();
 
 	bool bCanAttack = true;
@@ -130,11 +152,8 @@ protected:
 
 	int32 ComboAttack = 1;
 
-	UPROPERTY(EditAnywhere, Category = "Animation")
-		float AttackTime;
 
-	UPROPERTY(EditAnywhere, Category = "Animation")
-	float HurtTime;
+	
 
 	UPROPERTY(EditAnywhere, Category = "GamePlay")
 		float AttackCD;
@@ -220,7 +239,7 @@ public:
 
 private:
 	/*True if the player is currently talking with any pawn*/
-	bool bIsTalking;
+
 
 	/*True if the player is inside a valid range to start talking to a pawn*/
 	bool bIsInTalkRange;
@@ -229,6 +248,7 @@ private:
 	void ToggleTalking();
 
 	/*The pawn that the player is currently talking to*/
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Dialogue, meta = (AllowPrivateAccess = "true"))
 	ATDIdleNPC* AssociatedPawn;
 
 	/*A reference to our lines - retrieved from the associated pawn*/
@@ -255,6 +275,7 @@ public:
 	void SetTalkRangeStatus(bool Status) { bIsInTalkRange = Status; }
 
 	/*Sets a new associated pawn*/
+	
 	void SetAssociatedPawn(ATDIdleNPC* Pawn) { AssociatedPawn = Pawn; }
 
 	/*Retrieves the UI reference*/
@@ -263,6 +284,9 @@ public:
 protected:
 	UPROPERTY(EditAnywhere, Category = DialogSystem)
 	float TotalSubsTime = 0.f;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Dialogue)
+		bool bIsTalking;
 
 	/*The component responsible for playing our SFX*/
 	UPROPERTY(VisibleAnywhere)
@@ -321,6 +345,6 @@ protected:
 	UFUNCTION(BlueprintImplementableEvent, Category = Inventory)
 	void ToggleInventoryUI();
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Inventory)
 		bool bIsInventoryOpen = false;
 };

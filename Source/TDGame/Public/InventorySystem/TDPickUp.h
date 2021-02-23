@@ -7,9 +7,9 @@
 #include "TDGame/Public/InventorySystem/TDInventoryComponent.h"
 #include "TDPickUp.generated.h"
 
-UCLASS(Abstract, BlueprintType, Blueprintable, EditInlineNew, DefaultToInstanced)
+UCLASS(BlueprintType, Blueprintable)
 class TDGAME_API UTDPickUp : public UObject
-{
+{//, EditInlineNew, DefaultToInstanced
 	GENERATED_BODY()
 	
 public:	

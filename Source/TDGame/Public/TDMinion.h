@@ -20,7 +20,7 @@ public:
 
 protected:
 
-	class AObjective* AttachedObjective;
+
 
 	class ATDPaperCharacter* Player;
 
@@ -40,5 +40,5 @@ protected:
 	
 public:
 	
-	virtual void NotifyActorBeginOverlap(AActor* OtherActor);
+	virtual void NotifyActorBeginOverlap(AActor* OtherActor) override;
 };

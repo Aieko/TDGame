@@ -44,6 +44,9 @@ public:
 	/*Retrieves the corresponding character lines*/
 	UDataTable* GetPlayerLines() { return PlayerLines; }
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = DialogSystem)
+	FText NPCName;
+
 protected:
 
 	/*If the player is inside this box component he will be able to initiate a conversation with the pawn*/
