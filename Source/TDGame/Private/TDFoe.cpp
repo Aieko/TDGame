@@ -79,7 +79,8 @@ ATDFoe::ATDFoe()
 	CollisionComp->SetGenerateOverlapEvents(true);
 	CollisionComp->SetCanEverAffectNavigation(false);
 	CollisionComp->SetSimulatePhysics(true);
-	CollisionComp->SetMassOverrideInKg(NAME_None, 50, true);
+	CollisionComp->BodyInstance.bOverrideMass = true;
+	CollisionComp->BodyInstance.SetMassOverride(50.f);
 	CollisionComp->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 	CollisionComp->SetCollisionResponseToAllChannels(ECR_Block);
 	CollisionComp->SetCollisionResponseToChannel(COLLISION_BASE, ECR_Overlap);
@@ -112,7 +113,7 @@ ATDFoe::ATDFoe()
 	DistanceToBreakChasing = 120;
 
 	ImpulseForce = 50.f;
-
+	TargetPawn = nullptr;
 	bReplicates = true;
 }
 
@@ -121,6 +122,29 @@ void ATDFoe::BeginPlay()
 {
 	Super::BeginPlay();
 
+	NextPathPoint = GetNextPathPoint();
+	
+
+	if (Controller != nullptr)
+	{
+		return;
+	}
+		else if (AIControllerClass != nullptr)
+			{
+				FActorSpawnParameters SpawnInfo;
+				SpawnInfo.Instigator = GetInstigator();
+				SpawnInfo.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+				SpawnInfo.OverrideLevel = GetLevel();
+				SpawnInfo.ObjectFlags |= RF_Transient;    // We never want to save AI controllers into a map
+				AController* NewController = GetWorld()->SpawnActor<AController>(AIControllerClass, GetActorLocation(), GetActorRotation(), SpawnInfo);
+				if (NewController != nullptr)
+				{
+					// if successful will result in setting this->Controller 
+					// as part of possession mechanics
+					NewController->Possess(this);
+				}
+			}
+	
 	//casting to enemy base on level
 	ATDBase* EnemyBase = Cast<ATDBase>(Base);
 
@@ -133,7 +157,103 @@ void ATDFoe::BeginPlay()
 	//getting first path point for foe ai
 
 
-	NextPathPoint = GetNextPathPoint();
+	
+}
+
+FVector ATDFoe::GetNextPathPoint()
+{
+	
+
+	ATDBase* EnemyBase = Cast<ATDBase>(Base);
+
+	float NearestTargetDistance = FLT_MAX;
+
+	// if there TargetPawn then chase it
+	if (TargetPawn)
+	{
+
+		NextPathPoint = TargetPawn->GetActorLocation();
+
+		float Distance = (TargetPawn->GetActorLocation() - GetActorLocation()).Size();
+
+		//if distance to target more than distancetobreakchasing
+		if (Distance >= DistanceToBreakChasing)
+		{
+			TargetPawn = nullptr; //clear reference
+			bIsSeenPawn = false;
+
+			//trying to find base, if not than just standing
+			//code below was build for the tower defense game, it's actrually all deprecated now
+			/*
+			if (EnemyBase)
+			{
+				NextPathPoint = GetNextPathPoint();
+			}
+			else
+			{
+				return GetActorLocation();
+			}*/
+		}
+
+		//checking to face right direction to the target
+		if (GetActorLocation().Y < NextPathPoint.Y)
+		{
+			bIsTurned = false;
+		}
+		else
+		{
+			bIsTurned = true;
+		}
+		return NextPathPoint;
+
+	}
+
+	//failed to find path
+	return GetActorLocation();
+
+
+	// if there EnemyBase and we don't have any pawn around then the target is enemy base
+	//code below was build for the tower defense game, it's actrually all deprecated now
+	/*
+	if (EnemyBase && !bIsSeenPawn)
+	{
+		float Distance = (EnemyBase->GetActorLocation() - GetActorLocation()).Size();
+		if (Distance < NearestTargetDistance)
+		{
+
+			NearestTargetDistance = Distance;
+
+		}
+	}
+	// if EnemyBase is Valid then trying to find path to it
+	if (EnemyBase)
+	{
+		NextPathPoint = EnemyBase->GetActorLocation();
+
+		UNavigationPath* NavPath = UNavigationSystemV1::FindPathToLocationSynchronously(this, GetActorLocation(), NextPathPoint);
+
+		GetWorldTimerManager().ClearTimer(TimerHandle_RefreshPath);
+		GetWorldTimerManager().SetTimer(TimerHandle_RefreshPath, this, &ATDFoe::RefreshPath, 5.0f, false);
+
+		//ArrayOfPaths, should I clear them everytime?
+		if (NavPath && NavPath->PathPoints.Num() > 1)
+		{
+			if (GetActorLocation().Y < NextPathPoint.Y)
+			{
+				bIsTurned = false;
+			}
+			else
+			{
+				bIsTurned = true;
+			}
+			return NavPath->PathPoints[1];
+		}
+
+	}
+
+	*/
+
+	
 }
 
 // Called every frame
@@ -142,44 +262,41 @@ void ATDFoe::Tick(float DeltaTime)
 
 	Super::Tick(DeltaTime);
 
-	
+	//if foe is standing and not stuck
 	if (NextPathPoint == GetActorLocation() && !bStuck)
 	{
 		UpdateFoe();
-
+		//checking when boolean bIsChilling become false
 		if (!bIsChilling)
 		{
+			//pushing the function for walking around
 			WalkingAround();
 		}
-		
-			
+				
 	}
-	else
+	else //if nextpathpoint different to foe location
 	{
 		UpdateFoe();
-		if (!bIsDead)
-		{
-			float DistanceToTarget = (GetActorLocation() - NextPathPoint).Size();
+		//Calculating distance between foe and next target
+		float DistanceToTarget = (GetActorLocation() - NextPathPoint).Size();
 
 			//checking distance between foe and his target
 			if (DistanceToTarget <= RequiredDistanceToTarget)
 			{
-				
+
 				if (!bIsChilling)
 				{
-					ResetChilling();
-				//if we close to target then get next path point
+					//if we close to target then get next path point
 					NextPathPoint = GetNextPathPoint();
+
+					ResetChilling();
+					
 				}
 				else
 				{
 					NextPathPoint = GetActorLocation();
 				}
 
-				if (DebugTDFoePathDrawing)
-				{
-					GLog->Log("Target Reached.");
-				}
 				//if foe is stucked then setting it in the stucking mode
 				if (LastFoeLocation == GetActorLocation())
 				{
@@ -193,9 +310,29 @@ void ATDFoe::Tick(float DeltaTime)
 			//if we don't close to target
 			else
 			{
-				//Keep moving toward next target
-				UAIBlueprintHelperLibrary::SimpleMoveToLocation(GetController(), NextPathPoint);
-
+				if (CurrentState == EFoeState::Attacking)
+				{
+					if (bIsRangeFoe)
+					{
+						if (DistanceToTarget <= DistanceToStopAndShoot)
+						{
+							GetController()->StopMovement();
+						}
+						else
+						{
+							UAIBlueprintHelperLibrary::SimpleMoveToLocation(GetController(), NextPathPoint);
+						}
+					}
+					else
+					{
+						UAIBlueprintHelperLibrary::SimpleMoveToLocation(GetController(), NextPathPoint);
+					}
+				}
+				else
+				{
+					UAIBlueprintHelperLibrary::SimpleMoveToLocation(GetController(), NextPathPoint);
+				}
+		
 				if (GetActorLocation().Y <= NextPathPoint.Y)
 				{
 					bIsTurned = false;
@@ -206,20 +343,19 @@ void ATDFoe::Tick(float DeltaTime)
 				}
 
 			}
-			if (DebugTDFoePathDrawing)
-			{
-				DrawDebugSphere(GetWorld(), NextPathPoint, 20, 12, FColor::Yellow, false, 0.0f, 1.0f);
-			}
-			//saving our last location coordinates to track down stucking
-			LastFoeLocation = this->GetActorLocation();
-			OriginalRotation = GetActorRotation();
-
-		}
-
+			
+		//saving our last location coordinates to track down stucking
+		LastFoeLocation = this->GetActorLocation();
+		OriginalRotation = GetActorRotation();
 	}
 		
+}
 
-	
+
+
+void ATDFoe::RefreshPath()
+{
+	NextPathPoint = GetNextPathPoint();
 }
 
 void ATDFoe::ResetChilling()
@@ -269,94 +405,6 @@ void ATDFoe::UpdateFoe()
 	UpdateAnimation();
 }
 
-FVector ATDFoe::GetNextPathPoint()
-{
-	//AActor* BestTarget = nullptr;
-
-	ATDBase* EnemyBase = Cast<ATDBase>(Base);
-
-	float NearestTargetDistance = FLT_MAX;
-	
-	// if there TargetPawn then chase it
-	if (TargetPawn)
-	{
-		NextPathPoint = TargetPawn->GetActorLocation();
-		UAIBlueprintHelperLibrary::SimpleMoveToLocation(GetController(), NextPathPoint);
-		float Distance = (TargetPawn->GetActorLocation() - GetActorLocation()).Size();
-		//if distance to target more than distancetobreakchasing
-		if (Distance >= DistanceToBreakChasing)
-		{
-			TargetPawn = nullptr; //clear reference
-			bIsSeenPawn = false;
-			//trying to find base, if not than just standing
-			if (EnemyBase)
-			{
-				NextPathPoint = GetNextPathPoint();
-			}
-			else
-			{
-				return GetActorLocation();
-			}
-		}
-		if (GetActorLocation().Y < NextPathPoint.Y)
-		{
-			bIsTurned = false;
-		}
-		else
-		{
-			bIsTurned = true;
-		}
-		return NextPathPoint;
-
-	}
-
-	// if there EnemyBase and we don't have any pawn around then the target is enemy base
-	if (EnemyBase && !bIsSeenPawn)
-	{
-		float Distance = (EnemyBase->GetActorLocation() - GetActorLocation()).Size();
-		if (Distance < NearestTargetDistance)
-		{
-
-			NearestTargetDistance = Distance;
-
-		}
-	}
-	// if EnemyBase is Valid then trying to find path to it
-	if (EnemyBase)
-	{
-		NextPathPoint = EnemyBase->GetActorLocation();
-		
-		UNavigationPath* NavPath = UNavigationSystemV1::FindPathToLocationSynchronously(this, GetActorLocation(), NextPathPoint);
-		
-		GetWorldTimerManager().ClearTimer(TimerHandle_RefreshPath);
-		GetWorldTimerManager().SetTimer(TimerHandle_RefreshPath, this, &ATDFoe::RefreshPath, 5.0f, false);
-
-		//ArrayOfPaths, should I clear them everytime?
-		if (NavPath && NavPath->PathPoints.Num() > 1)
-		{
-			if (GetActorLocation().Y < NextPathPoint.Y)
-			{
-				bIsTurned = false;
-			}
-			else
-			{
-				bIsTurned = true;
-			}
-			return NavPath->PathPoints[1];
-		}
-
-	}
-
-	
-
-	//failed to find path
-	return GetActorLocation();
-}
-
-void ATDFoe::RefreshPath()
-{
-		NextPathPoint = GetNextPathPoint();
-}
 
 void ATDFoe::HandleTakeDamage(UTDHealthComponent * OwningHealthComp, int32 Health, int32 HealthDelta, const UDamageType * DamageType, AController * InstigatedBy, AActor * DamageCauser)
 {
@@ -374,7 +422,6 @@ void ATDFoe::HandleTakeDamage(UTDHealthComponent * OwningHealthComp, int32 Healt
 		ImpulseForce = -ImpulseForce;
 	}
 	
-
 	//Visual part of handle damage
 	if (MatInst == nullptr)
 	{
@@ -392,7 +439,7 @@ void ATDFoe::HandleTakeDamage(UTDHealthComponent * OwningHealthComp, int32 Healt
 		if (GetController() && DeathAnimation)
 		{
 			GetController()->StopMovement();
-			SetLifeSpan(0.6f);
+			SetLifeSpan(DeathAnimation->GetTotalDuration());
 			if (AttachedObjective)
 			{
 				AttachedObjective->Update(1);
@@ -470,7 +517,7 @@ void ATDFoe::SetFoeState(EFoeState NewState)
 	}
 	if (PrevState == EFoeState::Default && NewState == EFoeState::Attacking)
 	{
-		Attacking();
+		
 	}
 }
 
@@ -483,25 +530,7 @@ void ATDFoe::OnNoiseHeard(APawn * NoiseInstigator, const FVector & Location, flo
 	if (DebugTDFoePathDrawing)
 	{
 		DrawDebugSphere(GetWorld(), Location, 32.0f, 12, FColor::Red, false, 10.0f);
-	}
-
-	AActor* BestTarget = nullptr;
-	float NearestTargetDistance = FLT_MAX;
-
-
-	UTDHealthComponent* SeenPawnHealthComp = Cast<UTDHealthComponent>(NoiseInstigator->GetComponentByClass(UTDHealthComponent::StaticClass()));
-	if (SeenPawnHealthComp && SeenPawnHealthComp->GetHealth() > 0.0f)
-	{
-		float Distance = (NoiseInstigator->GetActorLocation() - GetActorLocation()).Size();
-
-		if (Distance < NearestTargetDistance)
-		{
-			BestTarget = NoiseInstigator;
-			NearestTargetDistance = Distance;
-		}
-	}
-
-	
+	}	
 	
 	bIsSeenPawn = true;
 	TargetPawn = NoiseInstigator;
@@ -515,13 +544,13 @@ void ATDFoe::NotifyActorBeginOverlap(AActor * OtherActor)
 {
 	Super::NotifyActorBeginOverlap(OtherActor);
 
-	ATDBase* EnemyBase = Cast<ATDBase>(OtherActor);
+	/*ATDBase* EnemyBase = Cast<ATDBase>(OtherActor);
 	if (OtherActor == EnemyBase)
 	{
 		UGameplayStatics::ApplyDamage(OtherActor, 1.0f, GetController(), this, nullptr);
 		this->Destroy();
 		
-	}
+	}*/
 	
 }
 

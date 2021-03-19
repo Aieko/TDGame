@@ -107,6 +107,11 @@ protected:
 
 	bool bCanAttack = true;
 
+	bool bIsRangeFoe;
+
+	UPROPERTY(EditAnywhere, Category = "Foe")
+		float DistanceToStopAndShoot;
+
 	FTimerHandle TimerHandle_RefreshPath;
 
 	FTimerHandle TimerHandle_FoeChilling;
@@ -114,8 +119,10 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Foe")
 		float ImpulseForce;
 
+	//Distance to get next path point
 	UPROPERTY(EditDefaultsOnly, Category = "Foe")
 		float RequiredDistanceToTarget;
+
 	UPROPERTY(EditDefaultsOnly, Category = "Foe")
 		float DistanceToBreakChasing;
 
@@ -137,6 +144,7 @@ protected:
 	bool bIsDead = false;
 public:	
 
+	FORCEINLINE bool GetIsDead() { return bIsDead; }
 	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;

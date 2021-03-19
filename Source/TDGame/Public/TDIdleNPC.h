@@ -3,8 +3,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Engine/DataTable.h"
-#include "TDGame/Public/DialogSystem/Subtitles.h"
+//#include "Engine/DataTable.h"
+//#include "TDGame/Public/DialogSystem/Subtitles.h"
 #include "GameFramework/Pawn.h"
 #include "TDIdleNPC.generated.h"
 UCLASS()
@@ -20,9 +20,6 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-public:	
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
 
 private:
 	UFUNCTION()
@@ -33,19 +30,6 @@ private:
 		void OnBoxEndOverlap(class UPrimitiveComponent* HitComp, class AActor* OtherActor, 
 			class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
-	UFUNCTION()
-		void Talk(USoundBase* SFX, TArray<FSubtitle> Subs);
-
-
-public:
-	/*Answers to the character after a specified delay*/
-	void AnswerToCharacter(FName PlayerLine, TArray<FSubtitle>& SubtitlesToDisplay, float delay);
-
-	/*Retrieves the corresponding character lines*/
-	UDataTable* GetPlayerLines() { return PlayerLines; }
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = DialogSystem)
-	FText NPCName;
 
 protected:
 
@@ -53,17 +37,46 @@ protected:
 	UPROPERTY(VisibleAnywhere)
 	class UBoxComponent* BoxComp;
 
-	/*The audio component responsible for playing the dialog coming from this pawn*/
-	UPROPERTY(VisibleAnywhere)
-		class UAudioComponent* AudioComp;
+	bool IsPlayerOverlap = false;
 
-	/*The player lines - each pawn can offer different dialog options for our character*/
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Animations")
+		class UPaperFlipbookComponent* FlipbookComponent;
+
+	UPROPERTY(EditAnywhere, Category = "Animations")
+		class UPaperFlipbook* NPCIdleAnimation;
+
+public:
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = DialogSystem)
+		FText NPCName;
+
+	/*   OLD DIALOGUE SYSTEM
+
+	//The player lines - each pawn can offer different dialog options for our character
 	UPROPERTY(EditAnywhere, Category = DialogSystem)
 		UDataTable* PlayerLines;
 
-	/*The ai lines*/
+	//The ai lines
 	UPROPERTY(EditAnywhere, Category = DialogSystem)
 		UDataTable* AILines;
 
-	bool IsPlayerOverlap = false;
+	//The audio component responsible for playing the dialog coming from this pawn
+	UPROPERTY(VisibleAnywhere)
+		class UAudioComponent* AudioComp;
+
+public:
+	//Answers to the character after a specified delay
+	void AnswerToCharacter(FName PlayerLine, TArray<FSubtitle>& SubtitlesToDisplay, float delay);
+
+	//Retrieves the corresponding character lines
+	UDataTable* GetPlayerLines() { return PlayerLines; }
+
+private:
+
+	UFUNCTION()
+		void Talk(USoundBase* SFX, TArray<FSubtitle> Subs);
+
+		*/
+
+
 };

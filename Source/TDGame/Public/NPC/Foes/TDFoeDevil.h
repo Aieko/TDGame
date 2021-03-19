@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "TDFoe.h"
+#include "TDMinion.h"
 #include "TDFoeDevil.generated.h"
 class ATDProjectile;
 /**
@@ -30,14 +31,37 @@ public:
 
 
 protected:
+	class USphereComponent* MinionsZoneSphere;
+
+	UFUNCTION()
+	void OnMinionsEndOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
+		UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
 	UPROPERTY(EditAnywhere, Category = "Animations")
-		UPaperFlipbook* FoeAttackAnimation;
+	UPaperFlipbook* FoeAttackAnimation;
 
-	UPROPERTY(EditDefaultsOnly, Category = Projectile)
+	UPROPERTY(EditDefaultsOnly, Category = Devil)
 	TSubclassOf<class ATDProjectile>ProjectileClass;
 
 	FTimerHandle TimerHandle_ResetAttack;
 
+	FTimerHandle TimerHandle_ResetSummon;
+
 	virtual void BeginPlay() override;
+
+	bool bCanSummon = true;
+
+private:
+
+	TArray<class ATDMinion*> MinionHorde;
+
+	UPROPERTY(EditAnywhere, Category = "Devil")
+	int32 MaxMinions;
+
+	int32 MinionsAlive;
+
+	UPROPERTY(EditDefaultsOnly, Category = Devil)
+	TSubclassOf<class ATDMinion>MinionClass;
+
+	void SpawnMinion();
 };

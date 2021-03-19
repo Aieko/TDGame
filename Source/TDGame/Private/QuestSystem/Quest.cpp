@@ -12,22 +12,9 @@ AQuest::AQuest() :
 	QuestStartDescription(),
 	QuestEndDescription()
 {
-}
-
-void AQuest::BeginPlay()
-{
-	Super::BeginPlay();
-	
-	
-	
-}
-
-// Called every frame
-void AQuest::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
 
 }
+
 
 bool AQuest::IsQuestComplete() const
 {

@@ -23,6 +23,7 @@
 #include "TDGame/Public/InventorySystem/TDPickUp.h"
 #include "TDGame/Public/InventorySystem/TDInventoryComponent.h"
 #include "NPC/TDProjectile.h"
+#include "TDInteractable.h"
 
 
 ATDPaperCharacter::ATDPaperCharacter(const FObjectInitializer& PCIP)
@@ -87,13 +88,13 @@ ATDPaperCharacter::ATDPaperCharacter(const FObjectInitializer& PCIP)
 	HitBox->SetSphereRadius(12.0f, true);
 	HitBox->OnComponentBeginOverlap.AddDynamic(this, &ATDPaperCharacter::OnOverlap);
 
-	PickUpSphere = CreateDefaultSubobject<USphereComponent>(TEXT("PickUpSphere"));
-	PickUpSphere->SetupAttachment(RootComponent);
-	PickUpSphere->SetCanEverAffectNavigation(false);
-	PickUpSphere->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
-	PickUpSphere->SetSphereRadius(36.0f, true);
-	PickUpSphere->OnComponentBeginOverlap.AddDynamic(this, &ATDPaperCharacter::PickUpOverlap);
-	PickUpSphere->OnComponentEndOverlap.AddDynamic(this, &ATDPaperCharacter::PickUpOverlapEnd);
+	InteractSphere = CreateDefaultSubobject<USphereComponent>(TEXT("InteractSphere"));
+	InteractSphere->SetupAttachment(RootComponent);
+	InteractSphere->SetCanEverAffectNavigation(false);
+	InteractSphere->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	InteractSphere->SetSphereRadius(36.0f, true);
+	InteractSphere->OnComponentBeginOverlap.AddDynamic(this, &ATDPaperCharacter::InteractOverlap);
+	InteractSphere->OnComponentEndOverlap.AddDynamic(this, &ATDPaperCharacter::InteractOverlapEnd);
 
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(RootComponent);
@@ -138,29 +139,66 @@ ATDPaperCharacter::ATDPaperCharacter(const FObjectInitializer& PCIP)
 	bIsInTalkRange = false;
 	AssociatedPawn = nullptr;
 
-	AudioComp = CreateDefaultSubobject<UAudioComponent>(FName("AudioComp"));
-	AudioComp->SetupAttachment(GetRootComponent());
 }
 
-void ATDPaperCharacter::PickUpOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
+void ATDPaperCharacter::InteractOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
 	int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	
-	
-	
+	ATDInteractable* Interactable = Cast<ATDInteractable>(OtherActor);
+
+	if (LastInteractableSeen && LastInteractableSeen != Interactable)
+	{
+		LastInteractableSeen->ShowTextAbove(false);
+		LastInteractableSeen = Interactable;
+
+	}
+
+	if (Interactable)
+	{
+		LastInteractableSeen = Interactable;
+		LastInteractableSeen->ShowTextAbove(true);
+		
+	}
+
 
 }
 
-void ATDPaperCharacter::PickUpOverlapEnd(UPrimitiveComponent * OverlappedComp, AActor * OtherActor,
+void ATDPaperCharacter::InteractOverlapEnd(UPrimitiveComponent * OverlappedComp, AActor * OtherActor,
 	UPrimitiveComponent * OtherComp, int32 OtherBodyIndex)
 {
+	ATDInteractable* Interactable = Cast<ATDInteractable>(OtherActor);
+
+	if (Interactable)
+	{
+		Interactable->ShowTextAbove(false);
+	}
+
+	if (LastInteractableSeen)
+	{
+		LastInteractableSeen = nullptr;
+	}
+
 	
 	
 }
 
 
-void ATDPaperCharacter::PickupItem()
+void ATDPaperCharacter::Interact()
 {
+	if (LastInteractableSeen)
+	{
+	
+
+		LastInteractableSeen->Use(this);
+		LastInteractableSeen->OnUse(this);
+	}
+	
+
+
+
+
+
+	//Items Pickup
 	/*if (LastItemSeen)
 	{
 		//Find the first available slot
@@ -175,6 +213,7 @@ void ATDPaperCharacter::PickupItem()
 		}
 		else GLog->Log("You can't carry any more items!");
 	}*/
+
 }
 
 void ATDPaperCharacter::UseItem(class UTDPickUp* Item)
@@ -191,12 +230,9 @@ void ATDPaperCharacter::BeginPlay()
 	Super::BeginPlay();
 	//Casting to base. It gives a reference to ignore dd to our buildings
 	Base = Cast<ATDBase>(Base);
-	LastItemSeen = nullptr;
+	LastInteractableSeen = nullptr;
 
 	CurrentHealth = HealthComp->GetHealth();
-	
-	//GetSprite()->OnFinishedPlaying.AddDynamic(this, &ATDPaperCharacter::UpdateAnimation);
-	
 	
 }
 
@@ -332,10 +368,6 @@ void ATDPaperCharacter::UpdateAnimation()
 				{
 					
 					GetSprite()->SetFlipbook(CharacterGetHitAnimation);
-					if (GetSprite()->IsLooping())
-					{
-						//GetSprite()->SetLooping(false);
-					}
 
 				}
 					//If char don't hurt and not dashing then char can attack
@@ -654,8 +686,6 @@ void ATDPaperCharacter::ResetAnimation()
 	if (bAttacking)
 	{
 		bAttacking = false;
-
-		UE_LOG(LogTemp, Warning, TEXT("Bool value is: %s"), bAttacking ? TEXT("true") : TEXT("false"));
 		
 	}
 
@@ -674,19 +704,14 @@ void ATDPaperCharacter::ResetAnimation()
 	DetermineState();
 }
 
-void ATDPaperCharacter::Interact()
-{
-	bInteract = true;
 
-
-}
 
 
 void ATDPaperCharacter::OnOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
 	int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	ATDProjectile* Projectile = Cast<ATDProjectile>(OtherActor);
-	if (OtherActor&&bIsBlocking&&!bIsBlocked)
+	if (OtherActor == Projectile && bIsBlocking && !bIsBlocked)
 	{
 		bIsBlocked = true;
 
@@ -774,7 +799,7 @@ void ATDPaperCharacter::SetupPlayerInputComponent(UInputComponent * PlayerInputC
 
 
 	//Action mapping of pickup item
-	InputComponent->BindAction("Pickup", IE_Pressed, this, &ATDPaperCharacter::PickupItem);
+	InputComponent->BindAction("Interact", IE_Pressed, this, &ATDPaperCharacter::Interact);
 
 	InputComponent->BindAction("Inventory", IE_Pressed, this, &ATDPaperCharacter::ToggleInventory);
 
@@ -790,11 +815,31 @@ void ATDPaperCharacter::ToggleTalking()
 	{
 		//If we are in talk range handle the talk status and the UI
 		
-		ToggleUI();
+		ToggleDialogueUI();
 
 	}
 }
 
+void ATDPaperCharacter::ToggleJournal()
+{
+	if (!bIsTalking)
+	{
+		ToggleJournalUI();
+	}
+
+}
+
+void ATDPaperCharacter::ToggleInventory()
+
+{
+
+	ToggleInventoryUI();
+
+
+}
+
+
+/*				OLD DIALOGUE SYSTEM
 FDialog * ATDPaperCharacter::RetrieveDialog(UDataTable * TableToSearch, FName RowName)
 {
 	if (!TableToSearch) return nullptr;
@@ -876,22 +921,5 @@ void ATDPaperCharacter::Talk(FString Excerpt, TArray<FSubtitle>& Subtitles)
 	}
 
 
-}
+}*/
 
-void ATDPaperCharacter::ToggleJournal()
-{
-	if (!bIsTalking)
-	{
-		ToggleJournalUI();
-	}
-	
-}
-
-void ATDPaperCharacter::ToggleInventory()
-
-{
-	
-		ToggleInventoryUI();
-	
-	
-}

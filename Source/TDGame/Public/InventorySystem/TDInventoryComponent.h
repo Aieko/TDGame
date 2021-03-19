@@ -29,6 +29,9 @@ public:
 	UPROPERTY(EditDefaultsOnly, Instanced)
 		TArray<class UTDPickUp*> DefaultItems;
 
+	UPROPERTY(EditDefaultsOnly,BlueprintReadWrite, Category = Inventory)
+		int32 Gold;
+
 	UPROPERTY(EditDefaultsOnly, Category = Inventory)
 		int32 Capacity;
 

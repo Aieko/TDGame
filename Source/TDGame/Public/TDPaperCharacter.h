@@ -2,7 +2,7 @@
 
 #pragma once
 #include "CoreMinimal.h"
-#include "TDGame/Public/DIalogUI.h"
+//#include "TDGame/Public/DIalogUI.h"
 #include "TDGame/Public/TDIdleNPC.h"
 #include "TDGame/Public/InventorySystem/TDPickUp.h"
 #include "PaperCharacter.h"
@@ -90,7 +90,7 @@ protected:
 		USphereComponent* HitBox;
 
 	UPROPERTY(VisibleAnywhere, Category = "Components")
-		USphereComponent* PickUpSphere;
+		USphereComponent* InteractSphere;
 
 	//component which allow chracter make noises
 	UPROPERTY(VisibleAnywhere, Category = "Components")
@@ -238,9 +238,7 @@ public:
 	//						***********DIALOG SYSTEM***********
 
 private:
-	/*True if the player is currently talking with any pawn*/
-
-
+	
 	/*True if the player is inside a valid range to start talking to a pawn*/
 	bool bIsInTalkRange;
 
@@ -251,57 +249,60 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Dialogue, meta = (AllowPrivateAccess = "true"))
 	ATDIdleNPC* AssociatedPawn;
 
-	/*A reference to our lines - retrieved from the associated pawn*/
+	/* OLD DIALOGUE SYSTEM
+	//A reference to our lines - retrieved from the associated pawn
 	UDataTable* AvailableLines;
 
-	/*Searches in the given row inside the specified table*/
-	FDialog* RetrieveDialog(UDataTable* TableToSearch, FName RowName);
+	//Searches in the given row inside the specified table
+	FDialog* RetrieveDialog(UDataTable* TableToSearch, FName RowName);*/
 
 public:
-
-	/*Generates the player lines*/
-	void GeneratePlayerLines(UDataTable& PlayerLines);
-
-	/*This array is essentially an Array of Excerpts from our dialogs!*/
-	UPROPERTY(BlueprintReadOnly)
-		TArray<FString> Questions;
-
-	/*Performs the actual talking - informs the associated pawn if necessary in order to answer
-	The subtitles array contain all the subtitles for this talk - it should be passed to our UI*/
-	UFUNCTION(BlueprintCallable, Category = DialogSystem)
-		void Talk(FString Excerpt, TArray<FSubtitle>& Subtitles);
-
 	/*Enables / disables our talk ability. The player can't talk if he's not in a valid range*/
 	void SetTalkRangeStatus(bool Status) { bIsInTalkRange = Status; }
 
 	/*Sets a new associated pawn*/
-	
 	void SetAssociatedPawn(ATDIdleNPC* Pawn) { AssociatedPawn = Pawn; }
 
-	/*Retrieves the UI reference*/
-	UDIalogUI* GetUI() { return UI; }
+	/* OLD DIALOGUE SYSTEM
+	//Generates the player lines
+	void GeneratePlayerLines(UDataTable& PlayerLines);
+
+	//Performs the actual talking - informs the associated pawn if necessary in order to answer
+	//The subtitles array contain all the subtitles for this talk - it should be passed to our UI
+	UFUNCTION(BlueprintCallable, Category = DialogSystem)
+		void Talk(FString Excerpt, TArray<FSubtitle>& Subtitles);
+
+	//This array is essentially an Array of Excerpts from our dialogs!
+	UPROPERTY(BlueprintReadOnly)
+		TArray<FString> Questions;
+
+	//Retrieves the UI reference
+	UDIalogUI* GetUI() { return UI; }*/
 
 protected:
-	UPROPERTY(EditAnywhere, Category = DialogSystem)
-	float TotalSubsTime = 0.f;
+
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Dialogue)
 		bool bIsTalking;
 
-	/*The component responsible for playing our SFX*/
-	UPROPERTY(VisibleAnywhere)
-		UAudioComponent* AudioComp;
-
 	/*Opens or closes the conversation UI*/
 	UFUNCTION(BlueprintImplementableEvent, Category = DialogSystem)
-		void ToggleUI();
+		void ToggleDialogueUI();
 
-	/*UI Reference*/
+	/* OLD DIALOGUE SYSTEM
+	//UI Reference
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 		UDIalogUI* UI;
 
+	//The component responsible for playing our SFX
+	UPROPERTY(VisibleAnywhere)
+		UAudioComponent* AudioComp;
 
-	//						***********Journal***********
+	UPROPERTY(EditAnywhere, Category = DialogSystem)
+		float TotalSubsTime = 0.f; */
+
+
+	//				      ***********Journal***********
 	UFUNCTION(BlueprintImplementableEvent, Category = Journal)
 	void ToggleJournalUI();
 	
@@ -311,27 +312,25 @@ protected:
 	class UUIJournal* UIJournal;
 
 	
-//					***********InventorySystem***********
+//						***********InventorySystem***********
 
 	
 
 private:
 	/*Raycasts in front of the character to find usable items*/
 	UFUNCTION()
-	void PickUpOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
+	void InteractOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
 			int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
 	UFUNCTION()
-	void PickUpOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
+	void InteractOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
 			UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
 
 	/*Reference to the last seen pickup item. Nullptr if none*/
-	class UTDPickUp* LastItemSeen;
+	class ATDInteractable* LastInteractableSeen;
 
 		/*Handles the Pickup Input*/
-	UFUNCTION()
-	void PickupItem();
 
 	UFUNCTION(BlueprintCallable, Category = Items)
 	void UseItem(class UTDPickUp* Item);

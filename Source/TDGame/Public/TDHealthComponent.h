@@ -36,6 +36,8 @@ protected:
 public:	
 
 	int32 GetHealth();
+	UFUNCTION(BlueprintCallable)
+	void SetHealth(int32 Value) { Health = Value; }
 
 	void Heal(int32 Ammount);
 

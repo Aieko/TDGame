@@ -43,17 +43,4 @@ public:
 	UFUNCTION(BlueprintImplementableEvent)
 		void OnUse(class ATDPaperCharacter* Character);
 
-	/*UPROPERTY(VisibleAnywhere, Category = "Components")
-	class USphereComponent* CollisionSphere;
-	
-	void SetGlowEffect(bool Status);
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Pickup)
-	class UPaperSpriteComponent* SpriteComponent;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Animations")
-	 class UTextRenderComponent* PressToPickUp;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Pickup)
-		class UPaperFlipbookComponent* FlipbookComponent;*/
 };

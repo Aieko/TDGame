@@ -18,14 +18,10 @@ public:
 	// Sets default values for this actor's properties
 	AQuest();
 
-	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
-
-	// Called every frame
-	virtual void Tick(float DeltaSeconds) override;
-
-
 public:
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Q")
+		FName QuestName;
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Q")
 		TArray<class AObjective*> CurrentObjectives;
 
@@ -34,9 +30,6 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Q")
 		class USoundCue* QuestStartSoundCue;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Q")
-		FName QuestName;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Q")
 		FText QuestStartDescription;

@@ -3,23 +3,28 @@
 
 #include "TDIdleNPC.h"
 #include "Components/BoxComponent.h"
-#include "Components/AudioComponent.h"
 #include "TDGame/Public/TDPaperCharacter.h"
+#include "PaperFlipbookComponent.h"
+#include "PaperFlipbook.h"
 #include "Kismet/GameplayStatics.h"
 #include "TimerManager.h"
 
 // Sets default values
 ATDIdleNPC::ATDIdleNPC()
 {
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = true;
-
-		//Init the box and audio comps
+ 	
+		//Init the collision box
 	BoxComp = CreateDefaultSubobject<UBoxComponent>(FName("BoxComp"));
 	RootComponent = BoxComp;
 
-	AudioComp = CreateDefaultSubobject<UAudioComponent>(FName("AudioComp"));
-	AudioComp->SetupAttachment(GetRootComponent());
+	FlipbookComponent = CreateDefaultSubobject<UPaperFlipbookComponent>(TEXT("SpriteComp"));
+	FlipbookComponent->SetRelativeLocation(FVector(-1.0f, 0.0f, 5.0f));
+	FlipbookComponent->SetRelativeScale3D(FVector(1.5f, 1.5f, 1.5f));
+	FlipbookComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	FlipbookComponent->SetGenerateOverlapEvents(false);
+	FlipbookComponent->SetCastShadow(false);
+	FlipbookComponent->SetCanEverAffectNavigation(false);
+	FlipbookComponent->SetupAttachment(GetRootComponent());
 
 }
 
@@ -35,11 +40,7 @@ void ATDIdleNPC::BeginPlay()
 }
 
 // Called every frame
-void ATDIdleNPC::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
 
-}
 
 void ATDIdleNPC::OnBoxOverlap(UPrimitiveComponent * HitComp, AActor * OtherActor, UPrimitiveComponent * OtherComp, 
 	int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult)
@@ -70,6 +71,7 @@ void ATDIdleNPC::OnBoxEndOverlap(UPrimitiveComponent * HitComp, AActor * OtherAc
 }
 
 
+/*			OLD DIALOGUE SYSTEM
 
 void ATDIdleNPC::Talk(USoundBase * SFX, TArray<FSubtitle> Subs)
 {
@@ -109,5 +111,5 @@ void ATDIdleNPC::AnswerToCharacter(FName PlayerLine, TArray<FSubtitle>& Subtitle
 
 	//Talk(Dialog->SFX, Dialog->Subtitles);
 	
-}
+}*/
 

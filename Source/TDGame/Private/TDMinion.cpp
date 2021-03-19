@@ -6,20 +6,25 @@
 #include "Engine/World.h"
 #include "TimerManager.h"
 #include "TDGame/Public/TDHealthComponent.h"
+#include "Blueprint/AIBlueprintHelperLibrary.h"
+#include "DrawDebugHelpers.h"
 
 
 ATDMinion::ATDMinion()
 {
 	HealthComp->DefaultHealth = 2;
 	
-	
+	bIsRangeFoe = false;
 
 }
 
 void ATDMinion::ResetCatchTime(APawn* CatchedActor)
 {
-	
- 	Player->CanMove = true;
+	if (Player)
+	{
+		Player->CanMove = true;
+	}
+ 	
 
 }
 
@@ -32,7 +37,7 @@ void ATDMinion::BeginPlay()
 {
 
 	Super::BeginPlay();
-	
+
 	
 }
 
@@ -41,7 +46,7 @@ void ATDMinion::NotifyActorBeginOverlap(AActor * OtherActor)
 	ATDPaperCharacter* PlayerPawn = Cast<ATDPaperCharacter>(OtherActor);
 	Player = PlayerPawn;
 
-	if (OtherActor == PlayerPawn && bCanGrap)
+	if (OtherActor && OtherActor == PlayerPawn && bCanGrap)
 	{
 		bCanGrap = false;
 		
@@ -57,3 +62,11 @@ void ATDMinion::NotifyActorBeginOverlap(AActor * OtherActor)
 		GetWorldTimerManager().SetTimer(TimerHandle_ResetCatchAbility, this, &ATDMinion::ResetCatchAbility, 5.0f, false);
 	}
 }
+void ATDMinion::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+	
+	
+}
+

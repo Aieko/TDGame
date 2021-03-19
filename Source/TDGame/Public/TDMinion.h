@@ -37,8 +37,14 @@ protected:
 	bool bCanGrap = true;
 
 	virtual void BeginPlay() override;
+
+	void Tick(float DeltaTime) override;
 	
 public:
+
+	FORCEINLINE void SetNextPathLocation(FVector PathLocation) { NextPathPoint = PathLocation; }
+
+	bool bNeedToReturn = false;
 	
 	virtual void NotifyActorBeginOverlap(AActor* OtherActor) override;
 };

@@ -8,6 +8,8 @@
 UTDInventoryComponent::UTDInventoryComponent()
 {
 	Capacity = 12;
+
+	Gold = 15;
 }
 
 
